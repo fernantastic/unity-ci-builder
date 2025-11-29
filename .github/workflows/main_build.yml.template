@@ -1,0 +1,74 @@
+name: Unity Build & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Comma-separated list of platforms to build (StandaloneWindows64, StandaloneOSX, StandaloneLinux64, Android, iOS)'
+        required: false
+        default: 'StandaloneWindows64'
+
+jobs:
+  build:
+    runs-on: [self-hosted, windows] # Ensure this matches your runner tags
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform: [StandaloneWindows64] # Add other platforms here manually or via inputs if using dynamic matrix
+
+    env:
+      UNITY_VERSION: 2022.3.20f1
+      PROJECT_NAME: ${{ github.event.repository.name }}
+      BUILD_ROOT: ${{ github.workspace }}\Build\Automated Builds\Latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unity Build
+        shell: powershell
+        run: |
+          $Target = "${{ matrix.targetPlatform }}"
+          # Override if manually triggered with input
+          if ("${{ github.event.inputs.platforms }}") {
+             if ("${{ github.event.inputs.platforms }}" -notmatch $Target) { return }
+          }
+          
+          $UnityExe = "C:\Program Files\Unity\Hub\Editor\${{ env.UNITY_VERSION }}\Editor\Unity.exe"
+          $BuildPath = "${{ env.BUILD_ROOT }}\$Target"
+          
+          & $UnityExe -quit -batchmode -projectPath "." `
+            -executeMethod UnityCloudBuild.CloudBuild.BuildAll `
+            -logFile "build_$Target.log"
+        env:
+          BUILD_TARGET: ${{ matrix.targetPlatform }}
+          BUILD_OUTPUT_PATH: ${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}
+
+      - name: Upload Unity Build Logs
+        uses: actions/upload-artifact@v4
+        if: always() # Upload logs even if the build failed
+        with:
+          name: unity-build-log-${{ matrix.targetPlatform }}
+          path: build_${{ matrix.targetPlatform }}.log
+
+      # --- Deployments (Optional: Uncomment to enable) ---
+      
+      # - name: Deploy to Itch.io
+      #   if: matrix.targetPlatform == 'StandaloneWindows64' # Add other platforms
+      #   shell: powershell
+      #   run: |
+      #     .\Scripts\deploy_itch.ps1 -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}" -Target "user/game:windows" -Version "${{ github.sha }}"
+      #   env:
+      #     BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+
+      # - name: Deploy to Steam
+      #   if: matrix.targetPlatform == 'StandaloneWindows64'
+      #   shell: powershell
+      #   run: |
+      #     .\Scripts\deploy_steam.ps1 -SteamAppID "123456" -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}"
+      #   env:
+      #     STEAM_USER: ${{ secrets.STEAM_USER }}
+      #     STEAM_PASS: ${{ secrets.STEAM_PASS }}
+      #     VDF_PATH: "path/to.vdf"

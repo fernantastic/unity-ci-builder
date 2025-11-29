@@ -1,0 +1,26 @@
+{
+  "name": "com.fernantastic.unity-ci-builder",
+  "displayName": "Unity CI/CD Builder",
+  "version": "1.0.0",
+  "unity": "2021.3",
+  "description": "Automated headless Unity builds and deployment to Itch.io and Steam via GitHub Actions.",
+  "keywords": [
+    "build",
+    "ci",
+    "github-actions",
+    "itch.io",
+    "steam"
+  ],
+  "author": {
+    "name": "Fernando Ramallo",
+    "email": "fernando.ramallo@gmail.com"
+  },
+  "samples": [
+    {
+      "displayName": "Build Scripts",
+      "description": "Editor scripts for performing headless builds.",
+      "path": "Samples/BuildScripts"
+    }
+  ]
+}
+
