@@ -8,7 +8,7 @@ on:
       platforms:
         description: 'Comma-separated list of platforms to build (StandaloneWindows64, StandaloneOSX, StandaloneLinux64, Android, iOS)'
         required: false
-        default: 'StandaloneWindows64'
+        default: 'StandaloneWindows64, StandaloneOSX, StandaloneLinux64'
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        targetPlatform: [StandaloneWindows64] # Add other platforms here manually or via inputs if using dynamic matrix
+        targetPlatform: [StandaloneWindows64, StandaloneOSX, StandaloneLinux64] # Add other platforms here manually or via inputs if using dynamic matrix
 
     env:
       UNITY_VERSION: 2022.3.20f1
@@ -55,13 +55,27 @@ jobs:
 
       # --- Deployments (Optional: Uncomment to enable) ---
       
-      # - name: Deploy to Itch.io
-      #   if: matrix.targetPlatform == 'StandaloneWindows64' # Add other platforms
-      #   shell: powershell
-      #   run: |
-      #     .\Scripts\deploy_itch.ps1 -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}" -Target "user/game:windows" -Version "${{ github.sha }}"
-      #   env:
-      #     BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+      - name: Deploy to Itch.io
+        shell: powershell
+        run: |
+          $ChannelSuffix = switch ("${{ matrix.targetPlatform }}") {
+              "StandaloneWindows64" { "windows" }
+              "StandaloneOSX" { "mac" }
+              "StandaloneLinux64" { "linux" }
+              Default { "unknown" }
+          }
+          
+          if ($ChannelSuffix -eq "unknown") { 
+             Write-Warning "Skipping itch deployment for platform: ${{ matrix.targetPlatform }}"
+             return 
+          }
+          
+          # Replace 'user/game' with your actual itch.io username and game name
+          $ItchTarget = "user/game:$ChannelSuffix"
+          
+          .\Scripts\deploy_itch.ps1 -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}" -Target $ItchTarget -Version "${{ github.sha }}"
+        env:
+          BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
       # - name: Deploy to Steam
       #   if: matrix.targetPlatform == 'StandaloneWindows64'

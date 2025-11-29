@@ -18,11 +18,14 @@ This sets up:
 - `Unity-CI-Builder/Scripts/` (Deployment helper scripts in project root)
 
 ### 3. Configure
-1. **GitHub Secrets**: Add `ITCHIO_API_KEY`, `STEAM_USER`, `STEAM_PASS` if deploying.
+1. **GitHub Secrets**: Go to your repository's **Settings > Security > Secrets and variables > Actions** and add:
+   - `ITCHIO_API_KEY` (if deploying to Itch)
+   - `STEAM_USER`, `STEAM_PASS` (if deploying to Steam)
 2. **Workflow File**: Open `.github/workflows/main_build.yml`:
    - `UNITY_VERSION` is auto-detected. If you upgrade Unity, use **Tools > Unity CI Builder > Update Unity Version in Workflow**.
-   - Update `matrix.targetPlatform` with platforms you want (e.g., `[StandaloneWindows64, Android]`).
-   - Uncomment Itch/Steam deploy steps if needed.
+   - Update `matrix.targetPlatform` with platforms you want (Default: `[StandaloneWindows64, StandaloneOSX, StandaloneLinux64]`).
+   - Itch.io deployment is enabled by default. You must update `user/game` in the workflow file to match your Itch.io project.
+   - Uncomment Steam deploy steps if needed.
 
 ## Build Machine Setup (Runner)
 
