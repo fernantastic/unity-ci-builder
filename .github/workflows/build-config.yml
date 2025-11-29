@@ -1,0 +1,19 @@
+# Unity CI/CD Builder Configuration
+# Edit these settings to configure your builds and deployments
+
+# Platform Build Settings (use "true" or "false")
+BUILD_WINDOWS_64: "true"
+BUILD_MAC: "true"
+BUILD_LINUX: "false"
+BUILD_ANDROID: "false"
+BUILD_IOS: "false"
+
+# Itch.io Deployment Settings
+ITCH_ENABLED: "true"
+ITCH_USERNAME: "user"
+ITCH_GAME_NAME: "game"
+
+# Steam Deployment Settings
+STEAM_ENABLED: "false"
+STEAM_APP_ID: ""
+STEAM_DEPOT_ID: ""

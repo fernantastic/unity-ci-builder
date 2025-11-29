@@ -63,6 +63,23 @@ namespace UnityCloudBuild.Editor
                 Debug.LogError($"Workflow template not found at {workflowSrc}");
             }
 
+            // 2b. Copy Config File
+            string configSrc = Path.Combine(packageRoot, ".github/workflows/build-config.yml");
+            string configDest = Path.Combine(workflowDestDir, "build-config.yml");
+
+            if (File.Exists(configSrc))
+            {
+                if (!File.Exists(configDest))
+                {
+                    File.Copy(configSrc, configDest);
+                    Debug.Log($"Installed config file to: {configDest}");
+                }
+                else
+                {
+                    Debug.LogWarning($"Config file already exists at {configDest}. Skipping to preserve your settings.");
+                }
+            }
+
             // 3. Copy Sample Build Script to Assets/Unity-CI-Builder/Editor/CloudBuild.cs
             string scriptSrc = Path.Combine(packageRoot, "Samples~/BuildScripts/Editor/CloudBuild.cs");
             string editorDestDir = Path.Combine(Application.dataPath, "Unity-CI-Builder/Editor");

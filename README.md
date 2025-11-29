@@ -21,21 +21,24 @@ This sets up:
 1. **GitHub Secrets**: Go to your repository's **Settings > Security > Secrets and variables > Actions** and add:
    - `ITCHIO_API_KEY` (if deploying to Itch)
    - `STEAM_USER`, `STEAM_PASS` (if deploying to Steam)
-2. **Workflow Settings**: Open `.github/workflows/main_build.yml` and edit the settings at the top (in the `env` section):
+2. **Configuration Settings**: Edit `.github/workflows/build-config.yml` to configure your builds:
    ```yaml
-   BUILD_WINDOWS_64: true
-   BUILD_MAC_64: true
-   BUILD_MAC_ARM: true
-   BUILD_LINUX: false
+   BUILD_WINDOWS_64: "true"
+   BUILD_MAC: "true"
+   BUILD_LINUX: "false"
+   BUILD_ANDROID: "false"
+   BUILD_IOS: "false"
    
-   ITCH_USERNAME: your-username
-   ITCH_GAME_NAME: your-game-name
-   ITCH_ENABLED: true
+   ITCH_USERNAME: "your-username"
+   ITCH_GAME_NAME: "your-game-name"
+   ITCH_ENABLED: "true"
    
-   STEAM_APP_ID: "123456"
-   STEAM_DEPOT_ID: "123457"
-   STEAM_ENABLED: false
+   STEAM_APP_ID: ""
+   STEAM_DEPOT_ID: ""
+   STEAM_ENABLED: "false"
    ```
+   - Use `"true"` or `"false"` as strings
+   - `BUILD_MAC` builds for StandaloneOSX (universal Mac builds - works for both Intel and Apple Silicon)
    - `UNITY_VERSION` is auto-detected. If you upgrade Unity, use **Tools > Unity CI Builder > Update Unity Version in Workflow**.
 
 ## Build Machine Setup (Runner)
@@ -82,10 +85,10 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 
 1. **Get Credentials**: Use your Steamworks build account (not personal account).
 2. **Add Secrets**: Add `STEAM_USER` and `STEAM_PASS` to your repository secrets.
-3. **Configure Settings**: In `.github/workflows/main_build.yml`, set:
+3. **Configure Settings**: Edit `.github/workflows/build-config.yml`:
    - `STEAM_APP_ID`: Your Steam App ID (as string, e.g., `"123456"`)
    - `STEAM_DEPOT_ID`: Your Steam Depot ID (as string, e.g., `"123457"`)
-   - `STEAM_ENABLED: true`
+   - `STEAM_ENABLED: "true"`
    
    The VDF file is automatically generated during the workflow - no manual file editing needed!
 

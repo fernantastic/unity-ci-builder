@@ -11,29 +11,108 @@ on:
         default: 'StandaloneWindows64, StandaloneOSX, StandaloneLinux64'
 
 jobs:
+  setup:
+    runs-on: [self-hosted, windows, x64]
+    outputs:
+      platforms: ${{ steps.set-matrix.outputs.platforms }}
+      build_windows_64: ${{ steps.read-config.outputs.BUILD_WINDOWS_64 }}
+      build_mac: ${{ steps.read-config.outputs.BUILD_MAC }}
+      build_linux: ${{ steps.read-config.outputs.BUILD_LINUX }}
+      build_android: ${{ steps.read-config.outputs.BUILD_ANDROID }}
+      build_ios: ${{ steps.read-config.outputs.BUILD_IOS }}
+      itch_enabled: ${{ steps.read-config.outputs.ITCH_ENABLED }}
+      itch_username: ${{ steps.read-config.outputs.ITCH_USERNAME }}
+      itch_game_name: ${{ steps.read-config.outputs.ITCH_GAME_NAME }}
+      steam_enabled: ${{ steps.read-config.outputs.STEAM_ENABLED }}
+      steam_app_id: ${{ steps.read-config.outputs.STEAM_APP_ID }}
+      steam_depot_id: ${{ steps.read-config.outputs.STEAM_DEPOT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read Configuration
+        id: read-config
+        shell: powershell
+        run: |
+          $configPath = ".\.github\workflows\build-config.yml"
+          if (-not (Test-Path $configPath)) {
+              Write-Error "Config file not found at $configPath"
+              exit 1
+          }
+          
+          $content = Get-Content $configPath -Raw
+          
+          # Parse key-value pairs (simple YAML-like format)
+          $lines = $content -split "`n" | Where-Object { $_ -match '^\s*[A-Z_]+:' -and $_ -notmatch '^#' }
+          
+          $outputs = @{}
+          foreach ($line in $lines) {
+              if ($line -match '^\s*([A-Z_]+):\s*"?(.+?)"?\s*$') {
+                  $key = $matches[1]
+                  $value = $matches[2].Trim('"')
+                  $outputs[$key] = $value
+                  "$key=$value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+              }
+          }
+          
+          Write-Host "Read configuration: $($outputs.Count) settings"
+
+      - id: set-matrix
+        shell: powershell
+        run: |
+          $platforms = @()
+          
+          if ("${{ steps.read-config.outputs.BUILD_WINDOWS_64 }}" -eq "true") {
+              $platforms += "StandaloneWindows64"
+          }
+          
+          if ("${{ steps.read-config.outputs.BUILD_MAC }}" -eq "true") {
+              $platforms += "StandaloneOSX"
+          }
+          
+          if ("${{ steps.read-config.outputs.BUILD_LINUX }}" -eq "true") {
+              $platforms += "StandaloneLinux64"
+          }
+          
+          if ("${{ steps.read-config.outputs.BUILD_ANDROID }}" -eq "true") {
+              $platforms += "Android"
+          }
+          
+          if ("${{ steps.read-config.outputs.BUILD_IOS }}" -eq "true") {
+              $platforms += "iOS"
+          }
+          
+          if ($platforms.Count -eq 0) {
+              $platforms = @("StandaloneWindows64")
+          }
+          
+          $platformsJson = ($platforms | ConvertTo-Json -Compress)
+          Write-Host "Selected platforms: $platformsJson"
+          "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
   build:
+    needs: setup
     runs-on: [self-hosted, windows, x64]
     strategy:
       fail-fast: false
       matrix:
-        targetPlatform: [StandaloneWindows64, StandaloneOSX, StandaloneOSXUniversal, StandaloneLinux64, Android, iOS]
+        targetPlatform: ${{ fromJSON(needs.setup.outputs.platforms) }}
 
     env:
-      # --- CONFIGURATION SETTINGS (Edit these) ---
-      BUILD_WINDOWS_64: true
-      BUILD_MAC_64: true
-      BUILD_MAC_ARM: true
-      BUILD_LINUX: false
-      BUILD_ANDROID: false
-      BUILD_IOS: false
+      # --- CONFIGURATION SETTINGS (Loaded from .github/workflows/build-config.yml) ---
+      BUILD_WINDOWS_64: ${{ needs.setup.outputs.build_windows_64 }}
+      BUILD_MAC: ${{ needs.setup.outputs.build_mac }}
+      BUILD_LINUX: ${{ needs.setup.outputs.build_linux }}
+      BUILD_ANDROID: ${{ needs.setup.outputs.build_android }}
+      BUILD_IOS: ${{ needs.setup.outputs.build_ios }}
       
-      ITCH_ENABLED: true
-      ITCH_USERNAME: user
-      ITCH_GAME_NAME: game
+      ITCH_ENABLED: ${{ needs.setup.outputs.itch_enabled }}
+      ITCH_USERNAME: ${{ needs.setup.outputs.itch_username }}
+      ITCH_GAME_NAME: ${{ needs.setup.outputs.itch_game_name }}
       
-      STEAM_ENABLED: false
-      STEAM_APP_ID: ""
-      STEAM_DEPOT_ID: ""
+      STEAM_ENABLED: ${{ needs.setup.outputs.steam_enabled }}
+      STEAM_APP_ID: ${{ needs.setup.outputs.steam_app_id }}
+      STEAM_DEPOT_ID: ${{ needs.setup.outputs.steam_depot_id }}
       
       # --- Technical Settings (Usually auto-detected) ---
       UNITY_VERSION: 2022.3.20f1
@@ -49,26 +128,13 @@ jobs:
         run: |
           $Target = "${{ matrix.targetPlatform }}"
           
-          # Check if this platform should be built
-          $shouldBuild = switch ($Target) {
-              "StandaloneWindows64" { "${{ env.BUILD_WINDOWS_64 }}" -eq "true" }
-              "StandaloneOSX" { "${{ env.BUILD_MAC_64 }}" -eq "true" }
-              "StandaloneOSXUniversal" { "${{ env.BUILD_MAC_ARM }}" -eq "true" }
-              "StandaloneLinux64" { "${{ env.BUILD_LINUX }}" -eq "true" }
-              "Android" { "${{ env.BUILD_ANDROID }}" -eq "true" }
-              "iOS" { "${{ env.BUILD_IOS }}" -eq "true" }
-              Default { $false }
-          }
-          
           # Override if manually triggered with input
           if ("${{ github.event.inputs.platforms }}") {
-             if ("${{ github.event.inputs.platforms }}" -notmatch $Target) { 
+             $inputPlatforms = "${{ github.event.inputs.platforms }}" -split ","
+             if ($Target -notin $inputPlatforms) { 
                  Write-Host "Skipping $Target (not in manual input)"
                  return 
              }
-          } elseif (-not $shouldBuild) {
-              Write-Host "Skipping $Target (disabled in settings)"
-              return
           }
           
           $UnityExe = "C:\Program Files\Unity\Hub\Editor\${{ env.UNITY_VERSION }}\Editor\Unity.exe"
@@ -94,24 +160,9 @@ jobs:
         run: |
           $Target = "${{ matrix.targetPlatform }}"
           
-          # Check if this platform should be built
-          $shouldBuild = switch ($Target) {
-              "StandaloneWindows64" { "${{ env.BUILD_WINDOWS_64 }}" -eq "true" }
-              "StandaloneOSX" { "${{ env.BUILD_MAC_64 }}" -eq "true" }
-              "StandaloneOSXUniversal" { "${{ env.BUILD_MAC_ARM }}" -eq "true" }
-              "StandaloneLinux64" { "${{ env.BUILD_LINUX }}" -eq "true" }
-              Default { $false }
-          }
-          
-          if (-not $shouldBuild) {
-              Write-Host "Skipping itch deployment for $Target (platform disabled)"
-              return
-          }
-          
           $ChannelSuffix = switch ($Target) {
               "StandaloneWindows64" { "windows" }
               "StandaloneOSX" { "mac" }
-              "StandaloneOSXUniversal" { "mac" }
               "StandaloneLinux64" { "linux" }
               Default { "unknown" }
           }
