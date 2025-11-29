@@ -12,7 +12,7 @@ namespace UnityCloudBuild.Editor
         public static void InstallConfigFiles()
         {
             if (!EditorUtility.DisplayDialog("Install CI/CD Config", 
-                "This will copy build scripts and workflow templates to your project root. Existing files may be overwritten. Continue?", 
+                "This will copy build scripts and workflow templates to your project. Existing files may be overwritten. Continue?", 
                 "Yes", "No"))
             {
                 return;
@@ -25,24 +25,34 @@ namespace UnityCloudBuild.Editor
                 return;
             }
 
-            // 1. Copy PowerShell Scripts
+            // 1. Copy PowerShell Scripts to Unity-CI-Builder/Scripts
+            // Scripts are deployment helpers, typically in root/Scripts, but user wants them under a specific folder.
+            // Since these are run by CI outside Unity, typically they are at root.
+            // We'll put them in ProjectRoot/Unity-CI-Builder/Scripts
+            
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string builderRoot = Path.Combine(projectRoot, "Unity-CI-Builder");
+            string scriptsDestDir = Path.Combine(builderRoot, "Scripts");
+            
             CopyDirectory(
                 Path.Combine(packageRoot, "Scripts"), 
-                Path.Combine(Application.dataPath, "../Scripts")
+                scriptsDestDir
             );
 
             // 2. Copy Workflow Template
             string workflowSrc = Path.Combine(packageRoot, ".github/workflows/main_build.yml.template");
-            string workflowDestDir = Path.Combine(Application.dataPath, "../.github/workflows");
+            string workflowDestDir = Path.Combine(projectRoot, ".github/workflows");
             string workflowDest = Path.Combine(workflowDestDir, "main_build.yml");
 
             if (File.Exists(workflowSrc))
             {
                 Directory.CreateDirectory(workflowDestDir);
-                // Don't overwrite if exists, or ask? For now, we follow the prompt warning.
                 if (!File.Exists(workflowDest) || EditorUtility.DisplayDialog("Overwrite Workflow?", "main_build.yml already exists. Overwrite?", "Yes", "No"))
                 {
-                    File.Copy(workflowSrc, workflowDest, true);
+                    // We need to read the content to update the script paths, since we moved them to Unity-CI-Builder/Scripts
+                    string content = File.ReadAllText(workflowSrc);
+                    content = content.Replace(@".\Scripts\", @".\Unity-CI-Builder\Scripts\");
+                    File.WriteAllText(workflowDest, content);
                     Debug.Log($"Installed workflow to: {workflowDest}");
                 }
             }
@@ -51,14 +61,14 @@ namespace UnityCloudBuild.Editor
                 Debug.LogError($"Workflow template not found at {workflowSrc}");
             }
 
-            // 3. Copy Sample Build Script (if not already in Assets)
+            // 3. Copy Sample Build Script to Assets/Unity-CI-Builder/Editor/CloudBuild.cs
             string scriptSrc = Path.Combine(packageRoot, "Samples~/BuildScripts/Editor/CloudBuild.cs");
-            string scriptDestDir = Path.Combine(Application.dataPath, "Editor");
-            string scriptDest = Path.Combine(scriptDestDir, "CloudBuild.cs");
+            string editorDestDir = Path.Combine(Application.dataPath, "Unity-CI-Builder/Editor");
+            string scriptDest = Path.Combine(editorDestDir, "CloudBuild.cs");
 
             if (File.Exists(scriptSrc))
             {
-                Directory.CreateDirectory(scriptDestDir);
+                Directory.CreateDirectory(editorDestDir);
                 if (!File.Exists(scriptDest))
                 {
                     File.Copy(scriptSrc, scriptDest);
@@ -76,20 +86,9 @@ namespace UnityCloudBuild.Editor
 
         private static string GetPackageRootPath()
         {
-            // Try to find the package in the Package Manager
             var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(CloudBuildSetup).Assembly);
-            if (packageInfo != null)
-            {
-                return packageInfo.resolvedPath;
-            }
-
-            // Fallback for development (local assets)
-            if (Directory.Exists("Packages/" + PackageName))
-            {
-                return Path.GetFullPath("Packages/" + PackageName);
-            }
-            
-            // Fallback if checked out directly in Assets (not recommended but possible)
+            if (packageInfo != null) return packageInfo.resolvedPath;
+            if (Directory.Exists("Packages/" + PackageName)) return Path.GetFullPath("Packages/" + PackageName);
             return Path.GetFullPath("."); 
         }
 

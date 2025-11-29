@@ -14,8 +14,8 @@ Add this to your `Packages/manifest.json` dependencies:
 In Unity, click **Tools > Unity CI Builder > Install Config Files**.
 This sets up:
 - `.github/workflows/main_build.yml` (GitHub Actions workflow)
-- `Assets/Editor/CloudBuild.cs` (Build script)
-- `Scripts/` (Deployment helper scripts)
+- `Assets/Unity-CI-Builder/Editor/CloudBuild.cs` (Build script)
+- `Unity-CI-Builder/Scripts/` (Deployment helper scripts in project root)
 
 ### 3. Configure
 1. **GitHub Secrets**: Add `ITCHIO_API_KEY`, `STEAM_USER`, `STEAM_PASS` if deploying.
