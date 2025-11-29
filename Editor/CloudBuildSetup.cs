@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace UnityCloudBuild.Editor
 {
@@ -26,10 +27,6 @@ namespace UnityCloudBuild.Editor
             }
 
             // 1. Copy PowerShell Scripts to Unity-CI-Builder/Scripts
-            // Scripts are deployment helpers, typically in root/Scripts, but user wants them under a specific folder.
-            // Since these are run by CI outside Unity, typically they are at root.
-            // We'll put them in ProjectRoot/Unity-CI-Builder/Scripts
-            
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
             string builderRoot = Path.Combine(projectRoot, "Unity-CI-Builder");
             string scriptsDestDir = Path.Combine(builderRoot, "Scripts");
@@ -49,11 +46,15 @@ namespace UnityCloudBuild.Editor
                 Directory.CreateDirectory(workflowDestDir);
                 if (!File.Exists(workflowDest) || EditorUtility.DisplayDialog("Overwrite Workflow?", "main_build.yml already exists. Overwrite?", "Yes", "No"))
                 {
-                    // We need to read the content to update the script paths, since we moved them to Unity-CI-Builder/Scripts
                     string content = File.ReadAllText(workflowSrc);
                     content = content.Replace(@".\Scripts\", @".\Unity-CI-Builder\Scripts\");
+                    
+                    // Auto-detect and set Unity version
+                    string currentUnityVersion = Application.unityVersion;
+                    content = Regex.Replace(content, @"UNITY_VERSION: .* # Your project's Unity version", $"UNITY_VERSION: {currentUnityVersion} # Your project's Unity version");
+                    
                     File.WriteAllText(workflowDest, content);
-                    Debug.Log($"Installed workflow to: {workflowDest}");
+                    Debug.Log($"Installed workflow to: {workflowDest} with Unity version {currentUnityVersion}");
                 }
             }
             else
@@ -82,6 +83,38 @@ namespace UnityCloudBuild.Editor
             }
 
             Debug.Log("Unity CI/CD Builder setup complete.");
+        }
+
+        [MenuItem("Tools/Unity CI Builder/Update Unity Version in Workflow")]
+        public static void UpdateUnityVersion()
+        {
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string workflowPath = Path.Combine(projectRoot, ".github/workflows/main_build.yml");
+
+            if (!File.Exists(workflowPath))
+            {
+                EditorUtility.DisplayDialog("Error", "Workflow file not found. Please install config files first.", "OK");
+                return;
+            }
+
+            string content = File.ReadAllText(workflowPath);
+            string currentUnityVersion = Application.unityVersion;
+            
+            // Regex to find "UNITY_VERSION: <something>"
+            string pattern = @"(UNITY_VERSION:\s*)(.*)";
+            string newContent = Regex.Replace(content, pattern, $"$1{currentUnityVersion}");
+
+            if (content != newContent)
+            {
+                File.WriteAllText(workflowPath, newContent);
+                Debug.Log($"Updated Unity version in workflow to {currentUnityVersion}");
+                EditorUtility.DisplayDialog("Success", $"Updated Unity version to {currentUnityVersion}", "OK");
+            }
+            else
+            {
+                Debug.Log("Unity version in workflow is already up to date.");
+                EditorUtility.DisplayDialog("Info", "Unity version is already up to date.", "OK");
+            }
         }
 
         private static string GetPackageRootPath()

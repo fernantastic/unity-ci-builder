@@ -20,7 +20,7 @@ This sets up:
 ### 3. Configure
 1. **GitHub Secrets**: Add `ITCHIO_API_KEY`, `STEAM_USER`, `STEAM_PASS` if deploying.
 2. **Workflow File**: Open `.github/workflows/main_build.yml`:
-   - Set `UNITY_VERSION` to match your project.
+   - `UNITY_VERSION` is auto-detected. If you upgrade Unity, use **Tools > Unity CI Builder > Update Unity Version in Workflow**.
    - Update `matrix.targetPlatform` with platforms you want (e.g., `[StandaloneWindows64, Android]`).
    - Uncomment Itch/Steam deploy steps if needed.
 
