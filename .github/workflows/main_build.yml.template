@@ -12,13 +12,29 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, windows, x64] # Ensure this matches your runner tags
+    runs-on: [self-hosted, windows, x64]
     strategy:
       fail-fast: false
       matrix:
-        targetPlatform: [StandaloneWindows64, StandaloneOSX, StandaloneLinux64] # Add other platforms here manually or via inputs if using dynamic matrix
+        targetPlatform: [StandaloneWindows64, StandaloneOSX, StandaloneOSXUniversal, StandaloneLinux64, Android, iOS]
 
     env:
+      # --- CONFIGURATION SETTINGS (Edit these) ---
+      BUILD_WINDOWS_64: true
+      BUILD_MAC_64: true
+      BUILD_MAC_ARM: true
+      BUILD_LINUX: false
+      BUILD_ANDROID: false
+      BUILD_IOS: false
+      
+      ITCH_ENABLED: true
+      ITCH_USERNAME: user
+      ITCH_GAME_NAME: game
+      
+      STEAM_ENABLED: false
+      STEAM_APP_ID: ""
+      
+      # --- Technical Settings (Usually auto-detected) ---
       UNITY_VERSION: 2022.3.20f1
       PROJECT_NAME: ${{ github.event.repository.name }}
       BUILD_ROOT: ${{ github.workspace }}\Build\Automated Builds\Latest
@@ -31,9 +47,27 @@ jobs:
         shell: powershell
         run: |
           $Target = "${{ matrix.targetPlatform }}"
+          
+          # Check if this platform should be built
+          $shouldBuild = switch ($Target) {
+              "StandaloneWindows64" { "${{ env.BUILD_WINDOWS_64 }}" -eq "true" }
+              "StandaloneOSX" { "${{ env.BUILD_MAC_64 }}" -eq "true" }
+              "StandaloneOSXUniversal" { "${{ env.BUILD_MAC_ARM }}" -eq "true" }
+              "StandaloneLinux64" { "${{ env.BUILD_LINUX }}" -eq "true" }
+              "Android" { "${{ env.BUILD_ANDROID }}" -eq "true" }
+              "iOS" { "${{ env.BUILD_IOS }}" -eq "true" }
+              Default { $false }
+          }
+          
           # Override if manually triggered with input
           if ("${{ github.event.inputs.platforms }}") {
-             if ("${{ github.event.inputs.platforms }}" -notmatch $Target) { return }
+             if ("${{ github.event.inputs.platforms }}" -notmatch $Target) { 
+                 Write-Host "Skipping $Target (not in manual input)"
+                 return 
+             }
+          } elseif (-not $shouldBuild) {
+              Write-Host "Skipping $Target (disabled in settings)"
+              return
           }
           
           $UnityExe = "C:\Program Files\Unity\Hub\Editor\${{ env.UNITY_VERSION }}\Editor\Unity.exe"
@@ -48,41 +82,61 @@ jobs:
 
       - name: Upload Unity Build Logs
         uses: actions/upload-artifact@v4
-        if: always() # Upload logs even if the build failed
+        if: always()
         with:
           name: unity-build-log-${{ matrix.targetPlatform }}
           path: build_${{ matrix.targetPlatform }}.log
 
-      # --- Deployments (Optional: Uncomment to enable) ---
-      
       - name: Deploy to Itch.io
+        if: env.ITCH_ENABLED == 'true'
         shell: powershell
         run: |
-          $ChannelSuffix = switch ("${{ matrix.targetPlatform }}") {
+          $Target = "${{ matrix.targetPlatform }}"
+          
+          # Check if this platform should be built
+          $shouldBuild = switch ($Target) {
+              "StandaloneWindows64" { "${{ env.BUILD_WINDOWS_64 }}" -eq "true" }
+              "StandaloneOSX" { "${{ env.BUILD_MAC_64 }}" -eq "true" }
+              "StandaloneOSXUniversal" { "${{ env.BUILD_MAC_ARM }}" -eq "true" }
+              "StandaloneLinux64" { "${{ env.BUILD_LINUX }}" -eq "true" }
+              Default { $false }
+          }
+          
+          if (-not $shouldBuild) {
+              Write-Host "Skipping itch deployment for $Target (platform disabled)"
+              return
+          }
+          
+          $ChannelSuffix = switch ($Target) {
               "StandaloneWindows64" { "windows" }
               "StandaloneOSX" { "mac" }
+              "StandaloneOSXUniversal" { "mac" }
               "StandaloneLinux64" { "linux" }
               Default { "unknown" }
           }
           
           if ($ChannelSuffix -eq "unknown") { 
-             Write-Warning "Skipping itch deployment for platform: ${{ matrix.targetPlatform }}"
+             Write-Warning "Skipping itch deployment for platform: $Target"
              return 
           }
           
-          # Replace 'user/game' with your actual itch.io username and game name
-          $ItchTarget = "user/game:$ChannelSuffix"
+          $ItchTarget = "${{ env.ITCH_USERNAME }}/${{ env.ITCH_GAME_NAME }}:$ChannelSuffix"
           
-          .\Scripts\deploy_itch.ps1 -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}" -Target $ItchTarget -Version "${{ github.sha }}"
+          .\Unity-CI-Builder\Scripts\deploy_itch.ps1 -BuildDirectory "${{ env.BUILD_ROOT }}\$Target" -Target $ItchTarget -Version "${{ github.sha }}"
         env:
           BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
-      # - name: Deploy to Steam
-      #   if: matrix.targetPlatform == 'StandaloneWindows64'
-      #   shell: powershell
-      #   run: |
-      #     .\Scripts\deploy_steam.ps1 -SteamAppID "123456" -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}"
-      #   env:
-      #     STEAM_USER: ${{ secrets.STEAM_USER }}
-      #     STEAM_PASS: ${{ secrets.STEAM_PASS }}
-      #     VDF_PATH: "Unity-CI-Builder/steam_app_build.vdf"
+      - name: Deploy to Steam
+        if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
+        shell: powershell
+        run: |
+          if ("${{ env.STEAM_APP_ID }}" -eq "") {
+              Write-Error "STEAM_APP_ID is not set in workflow settings"
+              exit 1
+          }
+          
+          .\Unity-CI-Builder\Scripts\deploy_steam.ps1 -SteamAppID "${{ env.STEAM_APP_ID }}" -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}"
+        env:
+          STEAM_USER: ${{ secrets.STEAM_USER }}
+          STEAM_PASS: ${{ secrets.STEAM_PASS }}
+          VDF_PATH: "Unity-CI-Builder/steam_app_build.vdf"

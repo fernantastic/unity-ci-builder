@@ -21,11 +21,21 @@ This sets up:
 1. **GitHub Secrets**: Go to your repository's **Settings > Security > Secrets and variables > Actions** and add:
    - `ITCHIO_API_KEY` (if deploying to Itch)
    - `STEAM_USER`, `STEAM_PASS` (if deploying to Steam)
-2. **Workflow File**: Open `.github/workflows/main_build.yml`:
+2. **Workflow Settings**: Open `.github/workflows/main_build.yml` and edit the settings at the top (in the `env` section):
+   ```yaml
+   BUILD_WINDOWS_64: true
+   BUILD_MAC_64: true
+   BUILD_MAC_ARM: true
+   BUILD_LINUX: false
+   
+   ITCH_USERNAME: your-username
+   ITCH_GAME_NAME: your-game-name
+   ITCH_ENABLED: true
+   
+   STEAM_APP_ID: "123456"
+   STEAM_ENABLED: false
+   ```
    - `UNITY_VERSION` is auto-detected. If you upgrade Unity, use **Tools > Unity CI Builder > Update Unity Version in Workflow**.
-   - Update `matrix.targetPlatform` with platforms you want (Default: `[StandaloneWindows64, StandaloneOSX, StandaloneLinux64]`).
-   - Itch.io deployment is enabled by default. You must update `user/game` in the workflow file to match your Itch.io project.
-   - Uncomment Steam deploy steps if needed.
 
 ## Build Machine Setup (Runner)
 
@@ -61,20 +71,20 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 ### Itch.io Deployment
 
 1. **Get API Key**: Go to [itch.io Settings → API keys](https://itch.io/user/settings/api-keys) and generate a new key.
-2. **Add Secret**: Add `ITCHIO_API_KEY` to your repository secrets (Settings → Secrets and variables → Actions).
-3. **Configure Workflow**: Open `.github/workflows/main_build.yml` and update line 74: Replace `user/game` with your itch.io username and game name (e.g., `myusername/mygame`). The workflow automatically adds platform suffixes (`:windows`, `:mac`, `:linux`).
+2. **Add Secret**: Add `ITCHIO_API_KEY` to your repository secrets.
+3. **Configure Settings**: In `.github/workflows/main_build.yml`, set:
+   - `ITCH_USERNAME`: Your itch.io username
+   - `ITCH_GAME_NAME`: Your game name
+   - `ITCH_ENABLED: true`
 
 ### Steam Deployment
 
 1. **Get Credentials**: Use your Steamworks build account (not personal account).
 2. **Add Secrets**: Add `STEAM_USER` and `STEAM_PASS` to your repository secrets.
-3. **Edit VDF File**: The installer creates `Unity-CI-Builder/steam_app_build.vdf`. Edit it with:
-   - Your Steam App ID
-   - Your Depot ID(s)
-   - Adjust paths if needed
-4. **Enable in Workflow**: Open `.github/workflows/main_build.yml`, uncomment the `Deploy to Steam` step, and update:
-   - `SteamAppID` with your App ID
-   - `VDF_PATH` to point to `Unity-CI-Builder/steam_app_build.vdf` (or absolute path)
+3. **Edit VDF File**: The installer creates `Unity-CI-Builder/steam_app_build.vdf`. Edit it with your Steam App ID and Depot ID(s).
+4. **Configure Settings**: In `.github/workflows/main_build.yml`, set:
+   - `STEAM_APP_ID`: Your Steam App ID (as string, e.g., `"123456"`)
+   - `STEAM_ENABLED: true`
 
 ## Defaults
 - **Build Output**: `ProjectRoot/Build/Automated Builds/Latest/[Platform]/`
