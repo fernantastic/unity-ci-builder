@@ -33,6 +33,7 @@ This sets up:
    ITCH_ENABLED: true
    
    STEAM_APP_ID: "123456"
+   STEAM_DEPOT_ID: "123457"
    STEAM_ENABLED: false
    ```
    - `UNITY_VERSION` is auto-detected. If you upgrade Unity, use **Tools > Unity CI Builder > Update Unity Version in Workflow**.
@@ -81,10 +82,12 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 
 1. **Get Credentials**: Use your Steamworks build account (not personal account).
 2. **Add Secrets**: Add `STEAM_USER` and `STEAM_PASS` to your repository secrets.
-3. **Edit VDF File**: The installer creates `Unity-CI-Builder/steam_app_build.vdf`. Edit it with your Steam App ID and Depot ID(s).
-4. **Configure Settings**: In `.github/workflows/main_build.yml`, set:
+3. **Configure Settings**: In `.github/workflows/main_build.yml`, set:
    - `STEAM_APP_ID`: Your Steam App ID (as string, e.g., `"123456"`)
+   - `STEAM_DEPOT_ID`: Your Steam Depot ID (as string, e.g., `"123457"`)
    - `STEAM_ENABLED: true`
+   
+   The VDF file is automatically generated during the workflow - no manual file editing needed!
 
 ## Defaults
 - **Build Output**: `ProjectRoot/Build/Automated Builds/Latest/[Platform]/`

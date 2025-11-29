@@ -33,6 +33,7 @@ jobs:
       
       STEAM_ENABLED: false
       STEAM_APP_ID: ""
+      STEAM_DEPOT_ID: ""
       
       # --- Technical Settings (Usually auto-detected) ---
       UNITY_VERSION: 2022.3.20f1
@@ -126,7 +127,7 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
-      - name: Deploy to Steam
+      - name: Generate Steam VDF
         if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
         shell: powershell
         run: |
@@ -134,9 +135,60 @@ jobs:
               Write-Error "STEAM_APP_ID is not set in workflow settings"
               exit 1
           }
+          if ("${{ env.STEAM_DEPOT_ID }}" -eq "") {
+              Write-Error "STEAM_DEPOT_ID is not set in workflow settings"
+              exit 1
+          }
+          
+          $Target = "${{ matrix.targetPlatform }}"
+          $ContentRoot = "${{ env.BUILD_ROOT }}\$Target"
+          $BuildOutput = "${{ env.BUILD_ROOT }}\..\SteamOutput"
+          $VdfPath = "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
+          
+          # Ensure directory exists
+          New-Item -ItemType Directory -Force -Path (Split-Path $VdfPath) | Out-Null
+          
+          $VdfContent = @"
+// Auto-generated Steam App Build Configuration
+""AppBuild""
+{
+	""AppID"" ""${{ env.STEAM_APP_ID }}""
+	
+	""Desc"" ""Build from ${{ github.sha }}""
+	
+	""ContentRoot"" ""$ContentRoot""
+	
+	""BuildOutput"" ""$BuildOutput""
+	
+	""Depots""
+	{
+		""${{ env.STEAM_DEPOT_ID }}""
+		{
+			""LocalPath"" "".""
+			""DepotBuildConfig"" ""depot_build_${{ env.STEAM_DEPOT_ID }}.vdf""
+		}
+	}
+}
+"@
+          
+          Set-Content -Path $VdfPath -Value $VdfContent
+          Write-Host "Generated VDF file at: $VdfPath"
+          Write-Host "Content Root: $ContentRoot"
+          Write-Host "Build Output: $BuildOutput"
+
+      - name: Deploy to Steam
+        if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
+        shell: powershell
+        run: |
+          $VdfPath = "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
+          
+          if (-not (Test-Path $VdfPath)) {
+              Write-Error "VDF file not found at $VdfPath. Make sure Generate Steam VDF step ran successfully."
+              exit 1
+          }
           
           .\Unity-CI-Builder\Scripts\deploy_steam.ps1 -SteamAppID "${{ env.STEAM_APP_ID }}" -BuildDirectory "${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}"
         env:
           STEAM_USER: ${{ secrets.STEAM_USER }}
           STEAM_PASS: ${{ secrets.STEAM_PASS }}
-          VDF_PATH: "Unity-CI-Builder/steam_app_build.vdf"
+          VDF_PATH: "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"

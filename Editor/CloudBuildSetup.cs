@@ -83,12 +83,12 @@ namespace UnityCloudBuild.Editor
                 }
             }
 
-            // 4. Generate Steam VDF template
+            // 4. Generate Steam VDF template (optional - workflow auto-generates it, but this serves as a reference)
             string vdfPath = Path.Combine(builderRoot, "steam_app_build.vdf");
             if (!File.Exists(vdfPath))
             {
                 GenerateSteamVDFTemplate(vdfPath, projectRoot);
-                Debug.Log($"Generated Steam VDF template at: {vdfPath}");
+                Debug.Log($"Generated Steam VDF template at: {vdfPath} (workflow will auto-generate during builds)");
             }
 
             Debug.Log("Unity CI/CD Builder setup complete.");
