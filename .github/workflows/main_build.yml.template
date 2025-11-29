@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, windows] # Ensure this matches your runner tags
+    runs-on: [self-hosted, windows, x64] # Ensure this matches your runner tags
     strategy:
       fail-fast: false
       matrix:
