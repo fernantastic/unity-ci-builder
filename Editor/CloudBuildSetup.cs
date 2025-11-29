@@ -51,7 +51,8 @@ namespace UnityCloudBuild.Editor
                     
                     // Auto-detect and set Unity version
                     string currentUnityVersion = Application.unityVersion;
-                    content = Regex.Replace(content, @"UNITY_VERSION: .* # Your project's Unity version", $"UNITY_VERSION: {currentUnityVersion} # Your project's Unity version");
+                    // Regex to find "UNITY_VERSION: <something>" (simpler regex)
+                    content = Regex.Replace(content, @"UNITY_VERSION:.*", $"UNITY_VERSION: {currentUnityVersion}");
                     
                     File.WriteAllText(workflowDest, content);
                     Debug.Log($"Installed workflow to: {workflowDest} with Unity version {currentUnityVersion}");
