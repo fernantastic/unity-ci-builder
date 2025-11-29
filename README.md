@@ -5,9 +5,9 @@ Simple, automated headless Unity builds and deployment. Supports Windows, Mac, L
 ## Quick Start (Project Setup)
 
 ### 1. Install Package
-Add this to your `Packages/manifest.json` dependencies:
+Add this package via the Package Manager using "Add by Git URL" and enter: 
 ```json
-"com.fernantastic.unity-ci-builder": "git+https://github.com/YourUser/Unity-CI-Builder.git#main"
+https://github.com/fernantastic/unity-ci-builder.git
 ```
 
 ### 2. Setup Config
