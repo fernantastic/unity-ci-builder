@@ -2,7 +2,8 @@ name: Unity Build & Deploy
 
 on:
   push:
-    branches: [ main ]
+    # Branches are filtered in the setup job based on config
+    branches: [ '**' ]
   workflow_dispatch:
     inputs:
       platforms:
@@ -26,6 +27,7 @@ jobs:
       steam_enabled: ${{ steps.read-config.outputs.STEAM_ENABLED }}
       steam_app_id: ${{ steps.read-config.outputs.STEAM_APP_ID }}
       steam_depot_id: ${{ steps.read-config.outputs.STEAM_DEPOT_ID }}
+      build_branches: ${{ steps.read-config.outputs.BUILD_BRANCHES }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,6 +62,19 @@ jobs:
       - id: set-matrix
         shell: powershell
         run: |
+          # Filter by branch if triggered by push
+          if ("${{ github.event_name }}" -eq "push") {
+              $branch = "${{ github.ref_name }}"
+              $allowedBranches = "${{ steps.read-config.outputs.BUILD_BRANCHES }}" -split ","
+              $allowedBranches = $allowedBranches | ForEach-Object { $_.Trim() }
+              
+              if ($branch -notin $allowedBranches) {
+                  Write-Host "Branch '$branch' is not in allowed branches ($allowedBranches). Skipping build."
+                  "platforms=[]" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                  return
+              }
+          }
+
           $platforms = @()
           
           if ("${{ steps.read-config.outputs.BUILD_WINDOWS_64 }}" -eq "true") {

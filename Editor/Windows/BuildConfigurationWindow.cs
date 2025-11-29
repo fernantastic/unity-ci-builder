@@ -11,6 +11,7 @@ namespace UnityCloudBuild.Editor
         private const string ConfigPath = ".github/workflows/build-config.yml";
         
         // Settings
+        private string buildBranches = "main";
         private bool buildWindows64 = true;
         private bool buildMac = true;
         private bool buildLinux = false;
@@ -74,6 +75,11 @@ namespace UnityCloudBuild.Editor
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
             EditorGUILayout.Space();
+            GUILayout.Label("CI Settings", EditorStyles.boldLabel);
+            buildBranches = EditorGUILayout.TextField("Build Branches", buildBranches);
+            EditorGUILayout.HelpBox("Comma-separated list of branches to build (e.g., 'main, develop').", MessageType.None);
+
+            EditorGUILayout.Space();
             GUILayout.Label("Build Platforms", EditorStyles.boldLabel);
             buildWindows64 = EditorGUILayout.Toggle("Windows 64-bit", buildWindows64);
             buildMac = EditorGUILayout.Toggle("macOS (Universal)", buildMac);
@@ -133,6 +139,9 @@ namespace UnityCloudBuild.Editor
             string content = File.ReadAllText(fullPath);
             
             // Simple regex parsing
+            buildBranches = ParseString(content, "BUILD_BRANCHES");
+            if (string.IsNullOrEmpty(buildBranches)) buildBranches = "main";
+
             buildWindows64 = ParseBool(content, "BUILD_WINDOWS_64");
             buildMac = ParseBool(content, "BUILD_MAC");
             buildLinux = ParseBool(content, "BUILD_LINUX");
@@ -168,6 +177,9 @@ namespace UnityCloudBuild.Editor
 
             string content = $@"# Unity CI/CD Builder Configuration
 # Edit these settings to configure your builds and deployments
+
+# CI Settings
+BUILD_BRANCHES: ""{buildBranches}""
 
 # Platform Build Settings (use ""true"" or ""false"")
 BUILD_WINDOWS_64: ""{buildWindows64.ToString().ToLower()}""

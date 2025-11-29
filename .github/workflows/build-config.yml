@@ -1,6 +1,9 @@
 # Unity CI/CD Builder Configuration
 # Edit these settings to configure your builds and deployments
 
+# CI Settings
+BUILD_BRANCHES: "main"
+
 # Platform Build Settings (use "true" or "false")
 BUILD_WINDOWS_64: "true"
 BUILD_MAC: "true"
