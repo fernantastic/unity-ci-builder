@@ -12,15 +12,14 @@
     "steam"
   ],
   "author": {
-    "name": "Fernando Ramallo",
-    "email": "fernando.ramallo@gmail.com"
+    "name": "Fernantastic",
+    "email": "user@example.com"
   },
   "samples": [
     {
       "displayName": "Build Scripts",
       "description": "Editor scripts for performing headless builds.",
-      "path": "Samples/BuildScripts"
+      "path": "Samples~/BuildScripts"
     }
   ]
 }
-

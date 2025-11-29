@@ -52,7 +52,7 @@ namespace UnityCloudBuild.Editor
             }
 
             // 3. Copy Sample Build Script (if not already in Assets)
-            string scriptSrc = Path.Combine(packageRoot, "Samples/BuildScripts/Editor/CloudBuild.cs");
+            string scriptSrc = Path.Combine(packageRoot, "Samples~/BuildScripts/Editor/CloudBuild.cs");
             string scriptDestDir = Path.Combine(Application.dataPath, "Editor");
             string scriptDest = Path.Combine(scriptDestDir, "CloudBuild.cs");
 
