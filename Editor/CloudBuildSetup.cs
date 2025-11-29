@@ -83,6 +83,14 @@ namespace UnityCloudBuild.Editor
                 }
             }
 
+            // 4. Generate Steam VDF template
+            string vdfPath = Path.Combine(builderRoot, "steam_app_build.vdf");
+            if (!File.Exists(vdfPath))
+            {
+                GenerateSteamVDFTemplate(vdfPath, projectRoot);
+                Debug.Log($"Generated Steam VDF template at: {vdfPath}");
+            }
+
             Debug.Log("Unity CI/CD Builder setup complete.");
         }
 
@@ -142,6 +150,39 @@ namespace UnityCloudBuild.Editor
                 File.Copy(file, destFile, true);
                 Debug.Log($"Installed: {destFile}");
             }
+        }
+
+        private static void GenerateSteamVDFTemplate(string vdfPath, string projectRoot)
+        {
+            string buildOutputPath = Path.Combine(projectRoot, "Build", "Automated Builds", "Latest", "StandaloneWindows64");
+            string steamOutputPath = Path.Combine(projectRoot, "Build", "SteamOutput");
+            
+            string vdfContent = @"// Steam App Build Configuration
+// Edit this file with your Steam App ID and depot settings
+// See: https://partner.steamgames.com/doc/sdk/uploading
+
+""AppBuild""
+{
+	""AppID"" ""1234560""  // Replace with your Steam App ID
+	
+	""Desc"" ""Build Description""
+	
+	""ContentRoot"" """ + buildOutputPath.Replace("\\", "\\\\") + @"""  // Build output directory
+	
+	""BuildOutput"" """ + steamOutputPath.Replace("\\", "\\\\") + @"""  // Steam upload output
+	
+	""Depots""
+	{
+		""1234561""  // Replace with your Depot ID
+		{
+			""LocalPath"" "".""
+			""DepotBuildConfig"" ""depot_build_1234561.vdf""
+		}
+	}
+}
+";
+            Directory.CreateDirectory(Path.GetDirectoryName(vdfPath));
+            File.WriteAllText(vdfPath, vdfContent);
         }
     }
 }

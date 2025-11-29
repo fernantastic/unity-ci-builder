@@ -45,12 +45,36 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 1. Go to your GitHub Repository -> **Settings** -> **Actions** -> **Runners**.
 2. Click **New self-hosted runner**.
 3. Select your OS (Windows/macOS) and follow the commands provided by GitHub to download and configure the runner agent.
-4. **Crucial**: When asked for labels, add `self-hosted` and `windows` (or `macos`). These must match the `runs-on` tags in your `.github/workflows/main_build.yml`.
-5. Run the runner (e.g., `.\run.cmd`). For production, install it as a service so it starts automatically.
+4. **Crucial**: When asked for labels, add `self-hosted`, `windows` (or `macos`), and `x64`. These must match the `runs-on` tags in your `.github/workflows/main_build.yml`.
+5. **Run the runner** (choose one option):
+   - **Option A - Manual Run** (No admin needed): Simply run `.\run.cmd` in the runner directory. The runner will work but won't start automatically on reboot.
+   - **Option B - User Service** (No admin needed): Run `.\svc.cmd install` to install as a user service. It will start automatically when you log in.
+   - **Option C - System Service** (Admin required): Right-click PowerShell/Command Prompt, select "Run as Administrator", then run `.\svc.cmd install` and `.\svc.cmd start`. This runs even when you're not logged in.
 
 ### 3. Verify Environment
 - Ensure Unity is installed at the standard path (e.g., `C:\Program Files\Unity\Hub\Editor\...\Unity.exe`). If not, update the path in `main_build.yml`.
-- If deploying to Steam, ensure you have a VDF file and update `VDF_PATH` env var in the workflow.
+
+## Deployment Setup
+
+**Prerequisites**: Ensure `butler` (itch.io) and `steamcmd` (Steam) are installed and in your system PATH on the build machine.
+
+### Itch.io Deployment
+
+1. **Get API Key**: Go to [itch.io Settings → API keys](https://itch.io/user/settings/api-keys) and generate a new key.
+2. **Add Secret**: Add `ITCHIO_API_KEY` to your repository secrets (Settings → Secrets and variables → Actions).
+3. **Configure Workflow**: Open `.github/workflows/main_build.yml` and update line 74: Replace `user/game` with your itch.io username and game name (e.g., `myusername/mygame`). The workflow automatically adds platform suffixes (`:windows`, `:mac`, `:linux`).
+
+### Steam Deployment
+
+1. **Get Credentials**: Use your Steamworks build account (not personal account).
+2. **Add Secrets**: Add `STEAM_USER` and `STEAM_PASS` to your repository secrets.
+3. **Edit VDF File**: The installer creates `Unity-CI-Builder/steam_app_build.vdf`. Edit it with:
+   - Your Steam App ID
+   - Your Depot ID(s)
+   - Adjust paths if needed
+4. **Enable in Workflow**: Open `.github/workflows/main_build.yml`, uncomment the `Deploy to Steam` step, and update:
+   - `SteamAppID` with your App ID
+   - `VDF_PATH` to point to `Unity-CI-Builder/steam_app_build.vdf` (or absolute path)
 
 ## Defaults
 - **Build Output**: `ProjectRoot/Build/Automated Builds/Latest/[Platform]/`

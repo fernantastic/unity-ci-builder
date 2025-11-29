@@ -85,4 +85,4 @@ jobs:
       #   env:
       #     STEAM_USER: ${{ secrets.STEAM_USER }}
       #     STEAM_PASS: ${{ secrets.STEAM_PASS }}
-      #     VDF_PATH: "path/to.vdf"
+      #     VDF_PATH: "Unity-CI-Builder/steam_app_build.vdf"
