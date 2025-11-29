@@ -100,14 +100,6 @@ namespace UnityCloudBuild.Editor
                 }
             }
 
-            // 4. Generate Steam VDF template (optional - workflow auto-generates it, but this serves as a reference)
-            string vdfPath = Path.Combine(builderRoot, "steam_app_build.vdf");
-            if (!File.Exists(vdfPath))
-            {
-                GenerateSteamVDFTemplate(vdfPath, projectRoot);
-                Debug.Log($"Generated Steam VDF template at: {vdfPath} (workflow will auto-generate during builds)");
-            }
-
             Debug.Log("Unity CI/CD Builder setup complete.");
         }
 
@@ -143,6 +135,27 @@ namespace UnityCloudBuild.Editor
             }
         }
 
+        [MenuItem("Tools/Unity CI Builder/Create Steam VDF Template")]
+        public static void CreateSteamVDFTemplate()
+        {
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string builderRoot = Path.Combine(projectRoot, "Unity-CI-Builder");
+            string vdfPath = Path.Combine(builderRoot, "steam_app_build.vdf");
+
+            if (File.Exists(vdfPath))
+            {
+                if (!EditorUtility.DisplayDialog("Overwrite VDF?", 
+                    $"VDF file already exists at {vdfPath}. Overwrite?", "Yes", "No"))
+                {
+                    return;
+                }
+            }
+
+            GenerateSteamVDFTemplate(vdfPath, projectRoot);
+            Debug.Log($"Generated Steam VDF template at: {vdfPath}");
+            EditorUtility.DisplayDialog("Success", "Steam VDF template created in Unity-CI-Builder folder.", "OK");
+        }
+
         private static string GetPackageRootPath()
         {
             var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(CloudBuildSetup).Assembly);
@@ -171,32 +184,48 @@ namespace UnityCloudBuild.Editor
 
         private static void GenerateSteamVDFTemplate(string vdfPath, string projectRoot)
         {
-            string buildOutputPath = Path.Combine(projectRoot, "Build", "Automated Builds", "Latest", "StandaloneWindows64");
+            // Try to read settings from build-config.yml
+            string configPath = Path.Combine(projectRoot, ".github/workflows/build-config.yml");
+            string appId = "1234560";
+            string depotId = "1234561";
+
+            if (File.Exists(configPath))
+            {
+                string configContent = File.ReadAllText(configPath);
+                var appIdMatch = Regex.Match(configContent, @"STEAM_APP_ID:\s*""?(\d+)""?");
+                var depotIdMatch = Regex.Match(configContent, @"STEAM_DEPOT_ID:\s*""?(\d+)""?");
+
+                if (appIdMatch.Success && !string.IsNullOrEmpty(appIdMatch.Groups[1].Value)) appId = appIdMatch.Groups[1].Value;
+                if (depotIdMatch.Success && !string.IsNullOrEmpty(depotIdMatch.Groups[1].Value)) depotId = depotIdMatch.Groups[1].Value;
+            }
+
+            // Default runner path for build output (where the build job puts artifacts)
+            string buildOutputPath = @"C:\actions-runner\_work\" + Path.GetFileName(projectRoot) + @"\" + Path.GetFileName(projectRoot) + @"\Build\Automated Builds\Latest\StandaloneWindows64";
             string steamOutputPath = Path.Combine(projectRoot, "Build", "SteamOutput");
             
-            string vdfContent = @"// Steam App Build Configuration
+            string vdfContent = $@"// Steam App Build Configuration
 // Edit this file with your Steam App ID and depot settings
 // See: https://partner.steamgames.com/doc/sdk/uploading
 
 ""AppBuild""
-{
-	""AppID"" ""1234560""  // Replace with your Steam App ID
+{{
+	""AppID"" ""{appId}""  // Steam App ID (from build-config.yml if found)
 	
 	""Desc"" ""Build Description""
 	
-	""ContentRoot"" """ + buildOutputPath.Replace("\\", "\\\\") + @"""  // Build output directory
+	""ContentRoot"" ""{buildOutputPath.Replace("\\", "\\\\")}""  // Build output directory (Runner path)
 	
-	""BuildOutput"" """ + steamOutputPath.Replace("\\", "\\\\") + @"""  // Steam upload output
+	""BuildOutput"" ""{steamOutputPath.Replace("\\", "\\\\")}""  // Steam upload output
 	
 	""Depots""
-	{
-		""1234561""  // Replace with your Depot ID
-		{
+	{{
+		""{depotId}""  // Depot ID (from build-config.yml if found)
+		{{
 			""LocalPath"" "".""
-			""DepotBuildConfig"" ""depot_build_1234561.vdf""
-		}
-	}
-}
+			""DepotBuildConfig"" ""depot_build_{depotId}.vdf""
+		}}
+	}}
+}}
 ";
             Directory.CreateDirectory(Path.GetDirectoryName(vdfPath));
             File.WriteAllText(vdfPath, vdfContent);
