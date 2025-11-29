@@ -42,7 +42,34 @@ namespace UnityCloudBuild.Editor
         {
             EditorGUILayout.Space();
             GUILayout.Label("Unity CI/CD Builder Configuration", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox($"Editing: {ConfigPath}", MessageType.Info);
+            
+            // Check if config file exists
+            string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), ConfigPath);
+            bool configExists = File.Exists(fullPath);
+
+            // 1. Generate Build Files Button
+            GUI.backgroundColor = configExists ? new Color(1f, 0.9f, 0.4f) : new Color(0.4f, 1f, 0.4f);
+            if (GUILayout.Button("1. Generate Build Files", GUILayout.Height(40)))
+            {
+                CloudBuildSetup.InstallConfigFiles();
+                LoadConfig(); // Reload in case it was created/overwritten
+            }
+            GUI.backgroundColor = Color.white;
+
+            if (configExists)
+            {
+                EditorGUILayout.HelpBox("Build files found. You can update them by clicking above.", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Build files not found. Click above to generate them.", MessageType.Warning);
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+            EditorGUILayout.Space();
+
+            EditorGUILayout.HelpBox($"Editing: {ConfigPath}", MessageType.None);
             
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
@@ -79,10 +106,11 @@ namespace UnityCloudBuild.Editor
 
             EditorGUILayout.Space(20);
             
-            if (GUILayout.Button("Save Configuration", GUILayout.Height(30)))
+            if (GUILayout.Button("Save Configuration File", GUILayout.Height(30)))
             {
                 SaveConfig();
             }
+            EditorGUILayout.HelpBox("This will save to .github/workflows/build-config.yml", MessageType.None);
             
             if (GUILayout.Button("Reload from File"))
             {
