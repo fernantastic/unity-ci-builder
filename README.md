@@ -2,7 +2,7 @@
 
 Simple, automated headless Unity builds and deployment using **GitHub Actions** and **Self-Hosted Runners**.
 
-This tool automatically sets up all the necessary scripts and workflows to:
+This tool is added to your Unity project and handles all the necessary scripts and workflows to:
 - Trigger builds on your own build machine whenever you push code.
 - Support multi-platform builds: Windows, Mac, Linux, iOS, Android.
 - Automatically upload builds to **Itch.io** and **Steam**.
