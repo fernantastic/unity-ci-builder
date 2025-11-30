@@ -21,7 +21,6 @@ namespace UnityCloudBuild.Editor
         private bool itchEnabled = true;
         private string itchUsername = "user";
         private string itchGameName = "game";
-        private string butlerPath = @"C:\Users\fernantastic\AppData\Roaming\itch\apps\butler\butler.exe"; // Default path assumption
         
         private bool steamEnabled = false;
         private string steamAppId = "";
@@ -96,20 +95,6 @@ namespace UnityCloudBuild.Editor
                 EditorGUI.indentLevel++;
                 itchUsername = EditorGUILayout.TextField("Username", itchUsername);
                 itchGameName = EditorGUILayout.TextField("Game Name", itchGameName);
-                
-                EditorGUILayout.BeginHorizontal();
-                butlerPath = EditorGUILayout.TextField("Butler Path", butlerPath);
-                if (GUILayout.Button("Browse", GUILayout.Width(60)))
-                {
-                    string selectedPath = EditorUtility.OpenFilePanel("Select Butler Executable", "", "exe");
-                    if (!string.IsNullOrEmpty(selectedPath))
-                    {
-                        butlerPath = selectedPath;
-                    }
-                }
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.HelpBox("Path to butler executable (usually installed via itch.io app).", MessageType.None);
-                
                 EditorGUILayout.HelpBox($"Target: {itchUsername}/{itchGameName}:[platform]", MessageType.None);
                 EditorGUI.indentLevel--;
             }
@@ -166,8 +151,6 @@ namespace UnityCloudBuild.Editor
             itchEnabled = ParseBool(content, "ITCH_ENABLED");
             itchUsername = ParseString(content, "ITCH_USERNAME");
             itchGameName = ParseString(content, "ITCH_GAME_NAME");
-            butlerPath = ParseString(content, "BUTLER_PATH");
-            if (string.IsNullOrEmpty(butlerPath)) butlerPath = @"C:\Users\fernantastic\AppData\Roaming\itch\apps\butler\butler.exe";
             
             steamEnabled = ParseBool(content, "STEAM_ENABLED");
             steamAppId = ParseString(content, "STEAM_APP_ID");
@@ -209,7 +192,8 @@ BUILD_IOS: ""{buildiOS.ToString().ToLower()}""
 ITCH_ENABLED: ""{itchEnabled.ToString().ToLower()}""
 ITCH_USERNAME: ""{itchUsername}""
 ITCH_GAME_NAME: ""{itchGameName}""
-BUTLER_PATH: ""{butlerPath}""
+BUTLER_PATH_WIN: ""%APPDATA%\itch\apps\butler\butler.exe""
+BUTLER_PATH_OSX: ""~/.config/itch/apps/butler/butler""
 
 # Steam Deployment Settings
 STEAM_ENABLED: ""{steamEnabled.ToString().ToLower()}""

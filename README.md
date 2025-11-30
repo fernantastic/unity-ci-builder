@@ -67,10 +67,11 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 3. **Configure Settings**: Open **Tools > Unity CI Builder > Open Configuration Window**:
    - Enable Itch.io.
    - Enter your **Username** and **Game Name**.
-   - **Butler Path**: Locate the `butler.exe` file.
-     - Default (Windows): `C:\Users\[You]\AppData\Roaming\itch\apps\butler\butler.exe`
-     - You can browse to find it.
    - Click **Save Configuration File**.
+4. **Verify Butler Path**: The config file (`.github/workflows/build-config.yml`) is automatically set with default paths for Butler:
+   - Windows: `%APPDATA%\itch\apps\butler\butler.exe`
+   - macOS: `~/.config/itch/apps/butler/butler`
+   - *If your path is different, edit `build-config.yml` manually.*
 
 ### Steam Deployment
 
