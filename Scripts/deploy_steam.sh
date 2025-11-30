@@ -27,8 +27,8 @@ echo "--- Deploying to Steam ---"
 echo "App ID: $SteamAppID"
 echo "VDF Config: $VDFPath"
 
-# STEAM_USER and STEAM_PASS must be set as environment variables
-steamcmd +login "$STEAM_USER" "$STEAM_PASS" +run_app_build "$VDFPath" +quit
+# STEAM_USER and STEAM_PASSWORD must be set as environment variables
+steamcmd +login "$STEAM_USER" "$STEAM_PASSWORD" +run_app_build "$VDFPath" +quit
 exit_code=$?
 
 if [ $exit_code -ne 0 ]; then

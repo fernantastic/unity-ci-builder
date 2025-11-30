@@ -8,7 +8,7 @@ namespace UnityCloudBuild.Editor
 {
     public class BuildConfigurationWindow : EditorWindow
     {
-        private const string ConfigPath = ".github/workflows/build-config.yml";
+        private const string ConfigPath = ".github/build-config.yml";
         
         // Settings
         private string buildBranches = "main";
@@ -27,6 +27,7 @@ namespace UnityCloudBuild.Editor
         private bool steamEnabled = false;
         private string steamAppId = "";
         private string steamDepotId = "";
+        private string steamUsername = "";
 
         private Vector2 scrollPos;
 
@@ -122,6 +123,7 @@ namespace UnityCloudBuild.Editor
             if (steamEnabled)
             {
                 EditorGUI.indentLevel++;
+                steamUsername = EditorGUILayout.TextField("Username", steamUsername);
                 steamAppId = EditorGUILayout.TextField("App ID", steamAppId);
                 steamDepotId = EditorGUILayout.TextField("Depot ID", steamDepotId);
                 EditorGUI.indentLevel--;
@@ -133,7 +135,7 @@ namespace UnityCloudBuild.Editor
             {
                 SaveConfig();
             }
-            EditorGUILayout.HelpBox("This will save to .github/workflows/build-config.yml", MessageType.None);
+            EditorGUILayout.HelpBox("This will save to .github/build-config.yml", MessageType.None);
             
             if (GUILayout.Button("Reload from File"))
             {
@@ -189,6 +191,7 @@ namespace UnityCloudBuild.Editor
             itchGameName = ParseString(content, "ITCH_GAME_NAME");
             
             steamEnabled = ParseBool(content, "STEAM_ENABLED");
+            steamUsername = ParseString(content, "STEAM_USERNAME");
             steamAppId = ParseString(content, "STEAM_APP_ID");
             steamDepotId = ParseString(content, "STEAM_DEPOT_ID");
         }
@@ -238,6 +241,7 @@ BUTLER_PATH_OSX: ""~/.config/itch/apps/butler/butler""
 
 # Steam Deployment Settings
 STEAM_ENABLED: ""{steamEnabled.ToString().ToLower()}""
+STEAM_USERNAME: ""{steamUsername}""
 STEAM_APP_ID: ""{steamAppId}""
 STEAM_DEPOT_ID: ""{steamDepotId}""
 ";

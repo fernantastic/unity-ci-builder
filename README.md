@@ -24,10 +24,10 @@ https://github.com/fernantastic/unity-ci-builder.git
    - **Build Platforms**: Toggle the platforms you want to build.
    - **Itch.io Deployment**: Enable and enter your itch.io username and game name.
    - **Steam Deployment**: Enable and enter your App ID and Depot ID.
-4. Click **"Save Configuration File"**.
-   - This saves your settings to `.github/workflows/build-config.yml`.
-
-## Build Machine Setup (Runner)
+    4. Click **"Save Configuration File"**.
+       - This saves your settings to `.github/build-config.yml`.
+    
+    ## Build Machine Setup (Runner)
 
 To use your own computer as the build server (Self-Hosted Runner), follow these steps:
 
@@ -68,7 +68,7 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
    - Enable Itch.io.
    - Enter your **Username** and **Game Name**.
    - Click **Save Configuration File**.
-4. **Verify Butler Path**: The config file (`.github/workflows/build-config.yml`) is automatically set with default paths for Butler:
+4. **Verify Butler Path**: The config file (`.github/build-config.yml`) is automatically set with default paths for Butler:
    - Windows: `%APPDATA%\itch\apps\butler\butler.exe`
    - macOS: `~/.config/itch/apps/butler/butler`
    - *If your path is different, edit `build-config.yml` manually.*
@@ -76,7 +76,7 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 ### Steam Deployment
 
 1. **Get Credentials**: Use your Steamworks build account (not personal account).
-2. **Add Secrets**: Add `STEAM_USER` and `STEAM_PASS` to your repository secrets.
+2. **Add Secrets**: Add `STEAM_USER` and `STEAM_PASSWORD` to your repository secrets.
 3. **Configure Settings**: Open **Tools > Unity CI Builder > Open Configuration Window**:
    - Enable Steam.
    - Enter your **App ID** and **Depot ID**.

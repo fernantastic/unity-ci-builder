@@ -48,7 +48,7 @@ jobs:
         id: read-config
         shell: powershell
         run: |
-          $configPath = ".\.github\workflows\build-config.yml"
+          $configPath = ".\.github\build-config.yml"
           if (-not (Test-Path $configPath)) {
               Write-Error "Config file not found at $configPath"
               exit 1
@@ -295,6 +295,6 @@ jobs:
           ./Unity-CI-Builder/Scripts/deploy_steam.sh "${{ env.STEAM_APP_ID }}" "${{ env.BUILD_ROOT }}/${{ matrix.targetPlatform }}"
         env:
           STEAM_USER: ${{ secrets.STEAM_USER }}
-          STEAM_PASS: ${{ secrets.STEAM_PASS }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           VDF_PATH: "${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
 

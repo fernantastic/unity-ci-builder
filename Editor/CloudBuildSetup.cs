@@ -60,8 +60,8 @@ namespace UnityCloudBuild.Editor
             }
 
             // 2b. Copy Config File
-            string configSrc = Path.Combine(packageRoot, ".github/workflows/build-config.yml");
-            string configDest = Path.Combine(workflowDestDir, "build-config.yml");
+            string configSrc = Path.Combine(packageRoot, ".github/build-config.yml");
+            string configDest = Path.Combine(projectRoot, ".github/build-config.yml");
 
             if (File.Exists(configSrc))
             {
@@ -103,7 +103,7 @@ namespace UnityCloudBuild.Editor
         public static void UpdateUnityVersion()
         {
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
-            string configPath = Path.Combine(projectRoot, ".github/workflows/build-config.yml");
+            string configPath = Path.Combine(projectRoot, ".github/build-config.yml");
 
             if (!File.Exists(configPath))
             {
@@ -182,7 +182,7 @@ namespace UnityCloudBuild.Editor
         private static void GenerateSteamVDFTemplate(string vdfPath, string projectRoot)
         {
             // Try to read settings from build-config.yml
-            string configPath = Path.Combine(projectRoot, ".github/workflows/build-config.yml");
+            string configPath = Path.Combine(projectRoot, ".github/build-config.yml");
             string appId = "1234560";
             string depotId = "1234561";
 
