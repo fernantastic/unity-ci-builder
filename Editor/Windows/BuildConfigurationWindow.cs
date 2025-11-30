@@ -13,7 +13,7 @@ namespace UnityCloudBuild.Editor
         // Settings
         private string buildBranches = "main";
         private string unityVersion = "2022.3.20f1";
-        private bool autoDetectUnityVersion = true;
+        private bool autoDetectUnityVersion; // Loaded from EditorPrefs
         private bool buildWindows64 = true;
         private bool buildMac = true;
         private bool buildLinux = false;
@@ -39,6 +39,7 @@ namespace UnityCloudBuild.Editor
 
         private void OnEnable()
         {
+            autoDetectUnityVersion = EditorPrefs.GetBool("UnityCIBuilder_AutoDetectUnityVersion", true);
             LoadConfig();
         }
 
@@ -83,7 +84,13 @@ namespace UnityCloudBuild.Editor
             EditorGUILayout.HelpBox("Comma-separated list of branches to build (e.g., 'main, develop').", MessageType.None);
             
             EditorGUILayout.Space();
-            autoDetectUnityVersion = EditorGUILayout.Toggle("Automatically include Unity version", autoDetectUnityVersion);
+            bool newAutoDetect = EditorGUILayout.Toggle("Automatically include Unity version", autoDetectUnityVersion);
+            if (newAutoDetect != autoDetectUnityVersion)
+            {
+                autoDetectUnityVersion = newAutoDetect;
+                EditorPrefs.SetBool("UnityCIBuilder_AutoDetectUnityVersion", autoDetectUnityVersion);
+            }
+            
             if (autoDetectUnityVersion)
             {
                 EditorGUI.BeginDisabledGroup(true);
@@ -162,22 +169,17 @@ namespace UnityCloudBuild.Editor
             if (string.IsNullOrEmpty(buildBranches)) buildBranches = "main";
             
             string savedUnityVersion = ParseString(content, "UNITY_VERSION");
-            if (string.IsNullOrEmpty(savedUnityVersion))
+            if (autoDetectUnityVersion)
             {
-                autoDetectUnityVersion = true;
                 unityVersion = Application.unityVersion;
+            }
+            else if (!string.IsNullOrEmpty(savedUnityVersion))
+            {
+                unityVersion = savedUnityVersion;
             }
             else
             {
-                if (savedUnityVersion == Application.unityVersion)
-                {
-                    autoDetectUnityVersion = true;
-                }
-                else
-                {
-                    autoDetectUnityVersion = false;
-                    unityVersion = savedUnityVersion;
-                }
+                unityVersion = Application.unityVersion;
             }
 
             buildWindows64 = ParseBool(content, "BUILD_WINDOWS_64");
