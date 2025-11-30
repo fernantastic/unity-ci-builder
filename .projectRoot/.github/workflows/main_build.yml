@@ -60,11 +60,11 @@ jobs:
           $content = Get-Content $configPath -Raw
           
           # Parse key-value pairs (simple YAML-like format)
-          $lines = $content -split "`n" | Where-Object { $_ -match '^\s*[A-Z_]+:' -and $_ -notmatch '^#' }
+          $lines = $content -split "`n" | Where-Object { $_ -match '^\s*[A-Z_0-9]+:' -and $_ -notmatch '^#' }
           
           $outputs = @{}
           foreach ($line in $lines) {
-              if ($line -match '^\s*([A-Z_]+):\s*"?(.+?)"?\s*(#.*)?$') {
+              if ($line -match '^\s*([A-Z_0-9]+):\s*"?(.+?)"?\s*(#.*)?$') {
                   $key = $matches[1]
                   $value = $matches[2].Trim('"')
                   $outputs[$key] = $value
