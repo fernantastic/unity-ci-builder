@@ -89,6 +89,15 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 
 Once installed, manage your workflow, via the url `https://github.com/yourusername/yourproject/actions`
 
+## Where to find your builds
+
+After a successful run, your build files will be located on your **Build Machine (Runner)** in the project folder:
+
+`Build/Automated Builds/Latest/[Platform]/`
+
+Examples:
+- `Build/Automated Builds/Latest/StandaloneWindows64/`
+- `Build/Automated Builds/Latest/StandaloneOSX/`
+
 ## Defaults
-- **Build Output**: `ProjectRoot/Build/Automated Builds/Latest/[Platform]/`
 - **Build Method**: `UnityCloudBuild.CloudBuild.BuildAll` (handles all platforms based on env var)
