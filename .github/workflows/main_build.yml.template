@@ -222,22 +222,22 @@ jobs:
           
           $VdfContent = @"
 // Auto-generated Steam App Build Configuration
-""AppBuild""
+"AppBuild"
 {
-	""AppID"" ""${{ env.STEAM_APP_ID }}""
+	"AppID" "${{ env.STEAM_APP_ID }}"
 	
-	""Desc"" ""Build from ${{ github.sha }}""
+	"Desc" "Build from ${{ github.sha }}"
 	
-	""ContentRoot"" ""$ContentRoot""
+	"ContentRoot" "$ContentRoot"
 	
-	""BuildOutput"" ""$BuildOutput""
+	"BuildOutput" "$BuildOutput"
 	
-	""Depots""
+	"Depots"
 	{
-		""${{ env.STEAM_DEPOT_ID }}""
+		"${{ env.STEAM_DEPOT_ID }}"
 		{
-			""LocalPath"" "".""
-			""DepotBuildConfig"" ""depot_build_${{ env.STEAM_DEPOT_ID }}.vdf""
+			"LocalPath" "."
+			"DepotBuildConfig" "depot_build_${{ env.STEAM_DEPOT_ID }}.vdf"
 		}
 	}
 }
