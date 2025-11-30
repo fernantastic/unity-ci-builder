@@ -171,6 +171,7 @@ jobs:
 
       - name: Deploy to Itch.io
         if: env.ITCH_ENABLED == 'true'
+        # Use 'bash' explicitly. On Windows runners with Git installed, this usually resolves to Git Bash.
         shell: bash
         run: |
           Target="${{ matrix.targetPlatform }}"
@@ -256,6 +257,7 @@ jobs:
 
       - name: Deploy to Steam
         if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
+        # Use 'bash' explicitly. On Windows runners with Git installed, this usually resolves to Git Bash.
         shell: bash
         run: |
           VdfPath="${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
