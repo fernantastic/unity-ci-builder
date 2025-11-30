@@ -26,7 +26,7 @@ namespace UnityCloudBuild.Editor
                 return;
             }
 
-            // 1. Copy PowerShell Scripts to Unity-CI-Builder/Scripts
+            // 1. Copy Bash Scripts to Unity-CI-Builder/Scripts
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
             string builderRoot = Path.Combine(projectRoot, "Unity-CI-Builder");
             string scriptsDestDir = Path.Combine(builderRoot, "Scripts");
@@ -47,7 +47,8 @@ namespace UnityCloudBuild.Editor
                 if (!File.Exists(workflowDest) || EditorUtility.DisplayDialog("Overwrite Workflow?", "main_build.yml already exists. Overwrite?", "Yes", "No"))
                 {
                     string content = File.ReadAllText(workflowSrc);
-                    content = content.Replace(@".\Scripts\", @".\Unity-CI-Builder\Scripts\");
+                    // Use forward slashes for cross-platform compatibility
+                    content = content.Replace(@"./Scripts/", @"./Unity-CI-Builder/Scripts/");
                     
                     // Auto-detect and set Unity version
                     string currentUnityVersion = Application.unityVersion;
