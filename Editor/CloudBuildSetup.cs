@@ -83,15 +83,11 @@ namespace UnityCloudBuild.Editor
             if (File.Exists(scriptSrc))
             {
                 Directory.CreateDirectory(editorDestDir);
-                if (!File.Exists(scriptDest))
+                if (!File.Exists(scriptDest) || EditorUtility.DisplayDialog("Overwrite Build Script?", "CloudBuild.cs already exists. Overwrite with the latest version?", "Yes", "No"))
                 {
-                    File.Copy(scriptSrc, scriptDest);
+                    File.Copy(scriptSrc, scriptDest, true);
                     Debug.Log($"Installed build script to: {scriptDest}");
                     AssetDatabase.Refresh();
-                }
-                else
-                {
-                    Debug.LogWarning($"Build script already exists at {scriptDest}. Skipping copy to avoid overwriting changes.");
                 }
             }
 
