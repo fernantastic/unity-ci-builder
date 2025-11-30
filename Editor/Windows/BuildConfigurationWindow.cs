@@ -55,18 +55,22 @@ namespace UnityCloudBuild.Editor
             EditorGUILayout.Space();
             GUILayout.Label("Unity CI/CD Builder Configuration", EditorStyles.boldLabel);
             
+            // Check required files
+            DrawFileStatus();
+
             // Check if config file exists
             string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), ConfigPath);
             bool configExists = File.Exists(fullPath);
 
             // 1. Generate Build Files Button
             GUI.backgroundColor = configExists ? new Color(1f, 0.9f, 0.4f) : new Color(0.4f, 1f, 0.4f);
-            if (GUILayout.Button("1. Generate Build Files", GUILayout.Height(40)))
+            if (GUILayout.Button("1. Generate All Build Files", GUILayout.Height(40)))
             {
                 CloudBuildSetup.InstallConfigFiles();
                 LoadConfig(); // Reload in case it was created/overwritten
             }
             GUI.backgroundColor = Color.white;
+            EditorGUILayout.Space();
 
             if (configExists)
             {
@@ -184,6 +188,65 @@ namespace UnityCloudBuild.Editor
             }
 
             EditorGUILayout.EndScrollView();
+        }
+
+        private void DrawFileStatus()
+        {
+            EditorGUILayout.LabelField("Required Files Status:", EditorStyles.boldLabel);
+            
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            
+            DrawSingleFileStatus("Main Workflow (.github/workflows/main_build.yml)", 
+                Path.Combine(projectRoot, ".github/workflows/main_build.yml"));
+                
+            DrawSingleFileStatus("Build Config (.github/build-config.yml)", 
+                Path.Combine(projectRoot, ".github/build-config.yml"));
+                
+            DrawSingleFileStatus("Itch Deploy Script (.github/scripts/deploy_itch.sh)", 
+                Path.Combine(projectRoot, ".github/scripts/deploy_itch.sh"));
+                
+            DrawSingleFileStatus("Steam Deploy Script (.github/scripts/deploy_steam.sh)", 
+                Path.Combine(projectRoot, ".github/scripts/deploy_steam.sh"));
+                
+            DrawSingleFileStatus("CloudBuild Script (Assets/Unity-CI-Builder/Editor/CloudBuild.cs)", 
+                Path.Combine(Application.dataPath, "Unity-CI-Builder/Editor/CloudBuild.cs"));
+                
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+            EditorGUILayout.Space();
+        }
+
+        private void DrawSingleFileStatus(string label, string path)
+        {
+            bool exists = File.Exists(path);
+            
+            EditorGUILayout.BeginHorizontal();
+            
+            // Icon
+            var icon = exists ? EditorGUIUtility.IconContent("TestPassed") : EditorGUIUtility.IconContent("TestFailed");
+            GUILayout.Label(icon, GUILayout.Width(20));
+            
+            // Label
+            GUILayout.Label(label, exists ? EditorStyles.label : EditorStyles.boldLabel);
+            
+            // Create Button if missing
+            if (!exists)
+            {
+                if (GUILayout.Button("Create", GUILayout.Width(60)))
+                {
+                    // Call the specific install/copy method for this file
+                    // For now, we reuse the main install method but we could split it up
+                    // Or just trigger the full install since dependencies are interlinked
+                    if (EditorUtility.DisplayDialog("Create File", 
+                        $"To create this file, we recommend running the full 'Generate All Build Files' process. Proceed?", "Yes", "No"))
+                    {
+                        CloudBuildSetup.InstallConfigFiles();
+                        AssetDatabase.Refresh();
+                    }
+                }
+            }
+            
+            EditorGUILayout.EndHorizontal();
         }
 
         private void RunBuild(string target)

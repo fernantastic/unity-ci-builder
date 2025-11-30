@@ -160,6 +160,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure Build Script Exists
+        shell: powershell
+        run: |
+          # Check if the build script exists in the expected location
+          $ScriptPath = "Assets/Unity-CI-Builder/Editor/CloudBuild.cs"
+          $AltScriptPath = "Editor/CloudBuild.cs"
+          
+          if (-not (Test-Path $ScriptPath) -and -not (Test-Path $AltScriptPath)) {
+              Write-Error "Build script not found in 'Assets/Unity-CI-Builder/Editor/CloudBuild.cs'. Please open the 'CI/CD Config' window in Unity and click 'Generate All Build Files'."
+              exit 1
+          } else {
+              Write-Host "Build script found."
+          }
+
       - name: Unity Build
         shell: powershell
         run: |
@@ -177,7 +191,7 @@ jobs:
           $UnityExe = "C:\Program Files\Unity\Hub\Editor\${{ env.UNITY_VERSION }}\Editor\Unity.exe"
           $BuildPath = "${{ env.BUILD_ROOT }}\$Target"
           
-          & $UnityExe -quit -batchmode -projectPath "." `
+          & $UnityExe -quit -batchmode -nographics -projectPath "." `
             -executeMethod UnityCloudBuild.CloudBuild.BuildAll `
             -logFile "build_$Target.log"
         env:
