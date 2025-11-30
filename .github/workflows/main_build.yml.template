@@ -24,6 +24,7 @@ jobs:
       itch_enabled: ${{ steps.read-config.outputs.ITCH_ENABLED }}
       itch_username: ${{ steps.read-config.outputs.ITCH_USERNAME }}
       itch_game_name: ${{ steps.read-config.outputs.ITCH_GAME_NAME }}
+      butler_path: ${{ steps.read-config.outputs.BUTLER_PATH }}
       steam_enabled: ${{ steps.read-config.outputs.STEAM_ENABLED }}
       steam_app_id: ${{ steps.read-config.outputs.STEAM_APP_ID }}
       steam_depot_id: ${{ steps.read-config.outputs.STEAM_DEPOT_ID }}
@@ -124,6 +125,7 @@ jobs:
       ITCH_ENABLED: ${{ needs.setup.outputs.itch_enabled }}
       ITCH_USERNAME: ${{ needs.setup.outputs.itch_username }}
       ITCH_GAME_NAME: ${{ needs.setup.outputs.itch_game_name }}
+      BUTLER_PATH: ${{ needs.setup.outputs.butler_path }}
       
       STEAM_ENABLED: ${{ needs.setup.outputs.steam_enabled }}
       STEAM_APP_ID: ${{ needs.setup.outputs.steam_app_id }}
@@ -192,7 +194,7 @@ jobs:
           
           # Use bash script for deployment
           chmod +x ./Unity-CI-Builder/Scripts/deploy_itch.sh
-          ./Unity-CI-Builder/Scripts/deploy_itch.sh "${{ env.BUILD_ROOT }}/$Target" "$ItchTarget" "${{ github.sha }}"
+          ./Unity-CI-Builder/Scripts/deploy_itch.sh "${{ env.BUILD_ROOT }}/$Target" "$ItchTarget" "${{ github.sha }}" "${{ env.BUTLER_PATH }}"
         env:
           BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 

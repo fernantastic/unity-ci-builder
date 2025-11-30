@@ -56,7 +56,9 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 
 ## Deployment Setup
 
-**Prerequisites**: Ensure `butler` (itch.io) and `steamcmd` (Steam) are installed and in your system PATH on the build machine.
+**Prerequisites**: 
+- Ensure `steamcmd` (Steam) is installed and in your system PATH on the build machine.
+- For Itch.io, install the [Itch app](https://itch.io/app). This automatically installs `butler`.
 
 ### Itch.io Deployment
 
@@ -65,6 +67,9 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 3. **Configure Settings**: Open **Tools > Unity CI Builder > Open Configuration Window**:
    - Enable Itch.io.
    - Enter your **Username** and **Game Name**.
+   - **Butler Path**: Locate the `butler.exe` file.
+     - Default (Windows): `C:\Users\[You]\AppData\Roaming\itch\apps\butler\butler.exe`
+     - You can browse to find it.
    - Click **Save Configuration File**.
 
 ### Steam Deployment
