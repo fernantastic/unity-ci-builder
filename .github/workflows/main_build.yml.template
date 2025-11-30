@@ -36,96 +36,76 @@ jobs:
 
       - name: Read Configuration
         id: read-config
-        # Force using Git Bash on Windows to ensure reliable regex/text processing (avoiding PowerShell profile issues)
-        shell: bash
+        shell: powershell
         run: |
-          CONFIG_PATH=".github/workflows/build-config.yml"
-          if [ ! -f "$CONFIG_PATH" ]; then
-              echo "Error: Config file not found at $CONFIG_PATH"
+          $configPath = ".\.github\workflows\build-config.yml"
+          if (-not (Test-Path $configPath)) {
+              Write-Error "Config file not found at $configPath"
               exit 1
-          fi
+          }
           
-          echo "Reading configuration from $CONFIG_PATH"
+          $content = Get-Content $configPath -Raw
           
-          # Read file line by line
-          while IFS= read -r line || [ -n "$line" ]; do
-              # Remove comments
-              line=${line%%#*}
-              # Trim whitespace
-              line=$(echo "$line" | xargs)
-              
-              if [ -z "$line" ]; then continue; fi
-              
-              # Parse KEY: VALUE
-              if [[ "$line" =~ ^([A-Z_]+):[\ \t]*(.*)$ ]]; then
-                  key="${BASH_REMATCH[1]}"
-                  value="${BASH_REMATCH[2]}"
-                  
-                  # Remove surrounding quotes if present
-                  value="${value%\"}"
-                  value="${value#\"}"
-                  
-                  echo "Setting $key=$value"
-                  echo "$key=$value" >> $GITHUB_OUTPUT
-              fi
-          done < "$CONFIG_PATH"
+          # Parse key-value pairs (simple YAML-like format)
+          $lines = $content -split "`n" | Where-Object { $_ -match '^\s*[A-Z_]+:' -and $_ -notmatch '^#' }
+          
+          $outputs = @{}
+          foreach ($line in $lines) {
+              if ($line -match '^\s*([A-Z_]+):\s*"?(.+?)"?\s*(#.*)?$') {
+                  $key = $matches[1]
+                  $value = $matches[2].Trim('"')
+                  $outputs[$key] = $value
+                  "$key=$value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+              }
+          }
+          
+          Write-Host "Read configuration: $($outputs.Count) settings"
 
       - id: set-matrix
-        # Use Git Bash for consistency
-        shell: bash
+        shell: powershell
         run: |
           # Filter by branch if triggered by push
-          if [ "${{ github.event_name }}" == "push" ]; then
-              BRANCH="${{ github.ref_name }}"
-              ALLOWED_BRANCHES="${{ steps.read-config.outputs.BUILD_BRANCHES }}"
+          if ("${{ github.event_name }}" -eq "push") {
+              $branch = "${{ github.ref_name }}"
+              $allowedBranches = "${{ steps.read-config.outputs.BUILD_BRANCHES }}" -split ","
+              $allowedBranches = $allowedBranches | ForEach-Object { $_.Trim() }
               
-              # Check if branch is in allowed list (comma separated)
-              if [[ ",${ALLOWED_BRANCHES}," != *",$BRANCH,"* ]] && [[ "$ALLOWED_BRANCHES" != "" ]]; then
-                  # Simple check failed, try splitting
-                  FOUND=0
-                  IFS=',' read -ra ADDR <<< "$ALLOWED_BRANCHES"
-                  for i in "${ADDR[@]}"; do
-                      # Trim whitespace
-                      CLEAN_BRANCH=$(echo "$i" | xargs)
-                      if [ "$CLEAN_BRANCH" == "$BRANCH" ]; then
-                          FOUND=1
-                          break
-                      fi
-                  done
-                  
-                  if [ $FOUND -eq 0 ]; then
-                      echo "Branch '$BRANCH' is not in allowed branches ($ALLOWED_BRANCHES). Skipping build."
-                      echo "platforms=[]" >> $GITHUB_OUTPUT
-                      exit 0
-                  fi
-              fi
-          fi
+              if ($branch -notin $allowedBranches) {
+                  Write-Host "Branch '$branch' is not in allowed branches ($allowedBranches). Skipping build."
+                  "platforms=[]" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                  return
+              }
+          }
 
-          PLATFORMS="[]"
-          declare -a PLATFORM_LIST
+          $platforms = @()
           
-          if [ "${{ steps.read-config.outputs.BUILD_WINDOWS_64 }}" == "true" ]; then PLATFORM_LIST+=("StandaloneWindows64"); fi
-          if [ "${{ steps.read-config.outputs.BUILD_MAC }}" == "true" ]; then PLATFORM_LIST+=("StandaloneOSX"); fi
-          if [ "${{ steps.read-config.outputs.BUILD_LINUX }}" == "true" ]; then PLATFORM_LIST+=("StandaloneLinux64"); fi
-          if [ "${{ steps.read-config.outputs.BUILD_ANDROID }}" == "true" ]; then PLATFORM_LIST+=("Android"); fi
-          if [ "${{ steps.read-config.outputs.BUILD_IOS }}" == "true" ]; then PLATFORM_LIST+=("iOS"); fi
+          if ("${{ steps.read-config.outputs.BUILD_WINDOWS_64 }}" -eq "true") {
+              $platforms += "StandaloneWindows64"
+          }
           
-          if [ ${#PLATFORM_LIST[@]} -eq 0 ]; then
-              PLATFORM_LIST+=("StandaloneWindows64")
-          fi
+          if ("${{ steps.read-config.outputs.BUILD_MAC }}" -eq "true") {
+              $platforms += "StandaloneOSX"
+          }
           
-          # Convert bash array to JSON array manually
-          JSON_STR="["
-          FIRST=1
-          for i in "${PLATFORM_LIST[@]}"; do
-              if [ $FIRST -eq 0 ]; then JSON_STR="$JSON_STR,"; fi
-              JSON_STR="$JSON_STR\"$i\""
-              FIRST=0
-          done
-          JSON_STR="$JSON_STR]"
+          if ("${{ steps.read-config.outputs.BUILD_LINUX }}" -eq "true") {
+              $platforms += "StandaloneLinux64"
+          }
           
-          echo "Selected platforms: $JSON_STR"
-          echo "platforms=$JSON_STR" >> $GITHUB_OUTPUT
+          if ("${{ steps.read-config.outputs.BUILD_ANDROID }}" -eq "true") {
+              $platforms += "Android"
+          }
+          
+          if ("${{ steps.read-config.outputs.BUILD_IOS }}" -eq "true") {
+              $platforms += "iOS"
+          }
+          
+          if ($platforms.Count -eq 0) {
+              $platforms = @("StandaloneWindows64")
+          }
+          
+          $platformsJson = ($platforms | ConvertTo-Json -Compress)
+          Write-Host "Selected platforms: $platformsJson"
+          "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
   build:
     needs: setup
