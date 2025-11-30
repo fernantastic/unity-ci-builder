@@ -206,7 +206,7 @@ jobs:
               exit 1
           }
           
-          $VdfPath = "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
+          $VdfPath = "${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
           
           if (Test-Path $VdfPath) {
               Write-Host "Using existing VDF file at: $VdfPath"
@@ -220,28 +220,32 @@ jobs:
           # Ensure directory exists
           New-Item -ItemType Directory -Force -Path (Split-Path $VdfPath) | Out-Null
           
-          $VdfContent = @"
-// Auto-generated Steam App Build Configuration
-"AppBuild"
-{
-	"AppID" "${{ env.STEAM_APP_ID }}"
-	
-	"Desc" "Build from ${{ github.sha }}"
-	
-	"ContentRoot" "$ContentRoot"
-	
-	"BuildOutput" "$BuildOutput"
-	
-	"Depots"
-	{
-		"${{ env.STEAM_DEPOT_ID }}"
-		{
-			"LocalPath" "."
-			"DepotBuildConfig" "depot_build_${{ env.STEAM_DEPOT_ID }}.vdf"
-		}
-	}
-}
-"@
+          # Use single-quoted here-string with format operator to avoid parsing issues
+          $VdfTemplate = @'
+          // Auto-generated Steam App Build Configuration
+          "AppBuild"
+          {
+          	"AppID" "{0}"
+          	
+          	"Desc" "Build from {1}"
+          	
+          	"ContentRoot" "{2}"
+          	
+          	"BuildOutput" "{3}"
+          	
+          	"Depots"
+          	{
+          		"{4}"
+          		{
+          			"LocalPath" "."
+          			"DepotBuildConfig" "depot_build_{4}.vdf"
+          		}
+          	}
+          }
+          '@
+          
+          # Fill in the template
+          $VdfContent = $VdfTemplate -f "${{ env.STEAM_APP_ID }}", "${{ github.sha }}", $ContentRoot, $BuildOutput, "${{ env.STEAM_DEPOT_ID }}"
           
           Set-Content -Path $VdfPath -Value $VdfContent
           Write-Host "Generated VDF file at: $VdfPath"
@@ -252,7 +256,7 @@ jobs:
         if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
         shell: powershell
         run: |
-          $VdfPath = "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
+          $VdfPath = "${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
           
           if (-not (Test-Path $VdfPath)) {
               Write-Error "VDF file not found at $VdfPath. Make sure Generate Steam VDF step ran successfully."
@@ -263,4 +267,4 @@ jobs:
         env:
           STEAM_USER: ${{ secrets.STEAM_USER }}
           STEAM_PASS: ${{ secrets.STEAM_PASS }}
-          VDF_PATH: "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
+          VDF_PATH: "${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
