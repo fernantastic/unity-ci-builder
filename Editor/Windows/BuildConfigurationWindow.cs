@@ -52,6 +52,7 @@ namespace UnityCloudBuild.Editor
 
         private void OnGUI()
         {
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
             EditorGUILayout.Space();
             GUILayout.Label("Unity CI/CD Builder Configuration", EditorStyles.boldLabel);
             
@@ -87,8 +88,6 @@ namespace UnityCloudBuild.Editor
 
             EditorGUILayout.HelpBox($"Editing: {ConfigPath}", MessageType.None);
             
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
-
             EditorGUILayout.Space();
             GUILayout.Label("CI Settings", EditorStyles.boldLabel);
             buildBranches = EditorGUILayout.TextField("Build Branches", buildBranches);
