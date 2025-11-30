@@ -126,6 +126,8 @@ jobs:
         targetPlatform: ${{ fromJSON(needs.setup.outputs.platforms) }}
 
     env:
+      BASH_PATH_WIN: "c:\\Program Files\\Git\\git-bash.exe"
+      
       # --- CONFIGURATION SETTINGS (Loaded from .github/workflows/build-config.yml) ---
       BUILD_WINDOWS_64: ${{ needs.setup.outputs.build_windows_64 }}
       BUILD_MAC: ${{ needs.setup.outputs.build_mac }}
@@ -185,37 +187,38 @@ jobs:
 
       - name: Deploy to Itch.io
         if: env.ITCH_ENABLED == 'true'
-        # Use 'bash' explicitly. On Windows runners with Git installed, this usually resolves to Git Bash.
-        shell: bash
+        shell: powershell
         run: |
-          Target="${{ matrix.targetPlatform }}"
+          $Target="${{ matrix.targetPlatform }}"
           
-          case "$Target" in
-              "StandaloneWindows64") ChannelSuffix="windows" ;;
-              "StandaloneOSX") ChannelSuffix="mac" ;;
-              "StandaloneLinux64") ChannelSuffix="linux" ;;
-              *) ChannelSuffix="unknown" ;;
-          esac
+          switch ($Target) {
+              "StandaloneWindows64" { $ChannelSuffix="windows" }
+              "StandaloneOSX" { $ChannelSuffix="mac" }
+              "StandaloneLinux64" { $ChannelSuffix="linux" }
+              "Android" { $ChannelSuffix="android" }
+              "iOS" { $ChannelSuffix="ios" }
+              Default { $ChannelSuffix="unknown" }
+          }
           
-          if [ "$ChannelSuffix" == "unknown" ]; then 
-             echo "Warning: Skipping itch deployment for platform: $Target"
+          if ($ChannelSuffix -eq "unknown") { 
+             Write-Host "Warning: Skipping itch deployment for platform: $Target"
              exit 0
-          fi
+          }
           
-          ItchTarget="${{ env.ITCH_USERNAME }}/${{ env.ITCH_GAME_NAME }}:$ChannelSuffix"
+          $ItchTarget="${{ env.ITCH_USERNAME }}/${{ env.ITCH_GAME_NAME }}:$ChannelSuffix"
           
           # Determine correct Butler path based on OS
-          if [ "$ChannelSuffix" == "windows" ] || [ "$RUNNER_OS" == "Windows" ]; then
-              BUTLER_EXEC="${{ env.BUTLER_PATH_WIN }}"
-          elif [ "$ChannelSuffix" == "mac" ] || [ "$RUNNER_OS" == "macOS" ]; then
-              BUTLER_EXEC="${{ env.BUTLER_PATH_OSX }}"
-          else
-              BUTLER_EXEC="butler" # Fallback to PATH
-          fi
+          if ($ChannelSuffix -eq "windows" -or $env:RUNNER_OS -eq "Windows") {
+              $BUTLER_EXEC="${{ env.BUTLER_PATH_WIN }}"
+          } elseif ($ChannelSuffix -eq "mac" -or $env:RUNNER_OS -eq "macOS") {
+              $BUTLER_EXEC="${{ env.BUTLER_PATH_OSX }}"
+          } else {
+              $BUTLER_EXEC="butler" # Fallback to PATH
+          }
           
           # Use bash script for deployment
-          chmod +x ./Unity-CI-Builder/Scripts/deploy_itch.sh
-          ./Unity-CI-Builder/Scripts/deploy_itch.sh "${{ env.BUILD_ROOT }}/$Target" "$ItchTarget" "${{ github.sha }}" "$BUTLER_EXEC"
+          $ScriptPath = "./Unity-CI-Builder/Scripts/deploy_itch.sh"
+          & "${{ env.BASH_PATH_WIN }}" "$ScriptPath" "${{ env.BUILD_ROOT }}/$Target" "$ItchTarget" "${{ github.sha }}" "$BUTLER_EXEC"
         env:
           BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
@@ -232,7 +235,7 @@ jobs:
               exit 1
           }
           
-          $VdfPath = "${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
+          $VdfPath = "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
           
           if (Test-Path $VdfPath) {
               Write-Host "Using existing VDF file at: $VdfPath"
@@ -280,21 +283,20 @@ jobs:
 
       - name: Deploy to Steam
         if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
-        # Use 'bash' explicitly. On Windows runners with Git installed, this usually resolves to Git Bash.
-        shell: bash
+        shell: powershell
         run: |
-          VdfPath="${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
+          $VdfPath="${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
           
-          if [ ! -f "$VdfPath" ]; then
-              echo "Error: VDF file not found at $VdfPath. Make sure Generate Steam VDF step ran successfully."
+          if (-not (Test-Path $VdfPath)) {
+              Write-Error "Error: VDF file not found at $VdfPath. Make sure Generate Steam VDF step ran successfully."
               exit 1
-          fi
+          }
           
           # Use bash script for deployment
-          chmod +x ./Unity-CI-Builder/Scripts/deploy_steam.sh
-          ./Unity-CI-Builder/Scripts/deploy_steam.sh "${{ env.STEAM_APP_ID }}" "${{ env.BUILD_ROOT }}/${{ matrix.targetPlatform }}"
+          $ScriptPath = "./Unity-CI-Builder/Scripts/deploy_steam.sh"
+          & "${{ env.BASH_PATH_WIN }}" "$ScriptPath" "${{ env.STEAM_APP_ID }}" "${{ env.BUILD_ROOT }}/${{ matrix.targetPlatform }}"
         env:
           STEAM_USER: ${{ secrets.STEAM_USER }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VDF_PATH: "${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
+          VDF_PATH: "${{ github.workspace }}\Unity-CI-Builder\steam_app_build.vdf"
 

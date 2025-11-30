@@ -32,7 +32,7 @@ namespace UnityCloudBuild.Editor
             string scriptsDestDir = Path.Combine(builderRoot, "Scripts");
             
             CopyDirectory(
-                Path.Combine(packageRoot, "Scripts"), 
+                Path.Combine(packageRoot, ".github/scripts"), 
                 scriptsDestDir
             );
 
@@ -48,7 +48,7 @@ namespace UnityCloudBuild.Editor
                 {
                     string content = File.ReadAllText(workflowSrc);
                     // Use forward slashes for cross-platform compatibility
-                    content = content.Replace(@"./Scripts/", @"./Unity-CI-Builder/Scripts/");
+                    // The path in main_build.yml is now ./Unity-CI-Builder/Scripts/ which is correct
                     
                     File.WriteAllText(workflowDest, content);
                     Debug.Log($"Installed workflow to: {workflowDest}");
