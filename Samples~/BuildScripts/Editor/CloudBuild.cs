@@ -50,12 +50,12 @@ namespace UnityCloudBuild
             if (summary.result == BuildResult.Succeeded)
             {
                 Debug.Log($"Build SUCCEEDED! {summary.totalSize / 1024 / 1024} MB");
-                EditorApplication.Exit(0);
+                if (Application.isBatchMode) EditorApplication.Exit(0);
             }
             else
             {
                 Debug.LogError($"Build FAILED! Errors: {summary.totalErrors}");
-                EditorApplication.Exit(1);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
             }
         }
 

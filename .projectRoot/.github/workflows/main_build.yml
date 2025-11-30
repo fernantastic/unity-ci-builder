@@ -24,11 +24,14 @@ jobs:
       itch_enabled: ${{ steps.read-config.outputs.ITCH_ENABLED }}
       itch_username: ${{ steps.read-config.outputs.ITCH_USERNAME }}
       itch_game_name: ${{ steps.read-config.outputs.ITCH_GAME_NAME }}
+      itch_tag: ${{ steps.read-config.outputs.ITCH_TAG }}
       butler_path_win: ${{ steps.read-config.outputs.BUTLER_PATH_WIN }}
       butler_path_osx: ${{ steps.read-config.outputs.BUTLER_PATH_OSX }}
       steam_enabled: ${{ steps.read-config.outputs.STEAM_ENABLED }}
       steam_app_id: ${{ steps.read-config.outputs.STEAM_APP_ID }}
       steam_depot_id: ${{ steps.read-config.outputs.STEAM_DEPOT_ID }}
+      steam_set_live: ${{ steps.read-config.outputs.STEAM_SET_LIVE }}
+      steam_set_live_branch: ${{ steps.read-config.outputs.STEAM_SET_LIVE_BRANCH }}
       build_branches: ${{ steps.read-config.outputs.BUILD_BRANCHES }}
       unity_version: ${{ steps.read-config.outputs.UNITY_VERSION }}
     steps:
@@ -138,12 +141,15 @@ jobs:
       ITCH_ENABLED: ${{ needs.setup.outputs.itch_enabled }}
       ITCH_USERNAME: ${{ needs.setup.outputs.itch_username }}
       ITCH_GAME_NAME: ${{ needs.setup.outputs.itch_game_name }}
+      ITCH_TAG: ${{ needs.setup.outputs.itch_tag }}
       BUTLER_PATH_WIN: ${{ needs.setup.outputs.butler_path_win }}
       BUTLER_PATH_OSX: ${{ needs.setup.outputs.butler_path_osx }}
       
       STEAM_ENABLED: ${{ needs.setup.outputs.steam_enabled }}
       STEAM_APP_ID: ${{ needs.setup.outputs.steam_app_id }}
       STEAM_DEPOT_ID: ${{ needs.setup.outputs.steam_depot_id }}
+      STEAM_SET_LIVE: ${{ needs.setup.outputs.steam_set_live }}
+      STEAM_SET_LIVE_BRANCH: ${{ needs.setup.outputs.steam_set_live_branch }}
       
       # --- Technical Settings (Loaded from .github/workflows/build-config.yml) ---
       UNITY_VERSION: ${{ needs.setup.outputs.unity_version }}
@@ -205,6 +211,11 @@ jobs:
              exit 0
           }
           
+          $ChannelTag = "${{ env.ITCH_TAG }}"
+          if ($ChannelTag -ne "") {
+              $ChannelSuffix = "$ChannelSuffix-$ChannelTag"
+          }
+          
           $ItchTarget="${{ env.ITCH_USERNAME }}/${{ env.ITCH_GAME_NAME }}:$ChannelSuffix"
           
           # Determine correct Butler path based on OS
@@ -257,7 +268,7 @@ jobs:
           	"AppID" "{0}"
           	
           	"Desc" "Build from {1}"
-          	
+          	{5}
           	"ContentRoot" "{2}"
           	
           	"BuildOutput" "{3}"
@@ -273,8 +284,13 @@ jobs:
           }
           '@
           
+          $SetLiveLine = ""
+          if ("${{ env.STEAM_SET_LIVE }}" -eq "true" -and "${{ env.STEAM_SET_LIVE_BRANCH }}" -ne "") {
+              $SetLiveLine = "`n`t`"setlive`" `"${{ env.STEAM_SET_LIVE_BRANCH }}`""
+          }
+          
           # Fill in the template
-          $VdfContent = $VdfTemplate -f "${{ env.STEAM_APP_ID }}", "${{ github.sha }}", $ContentRoot, $BuildOutput, "${{ env.STEAM_DEPOT_ID }}"
+          $VdfContent = $VdfTemplate -f "${{ env.STEAM_APP_ID }}", "${{ github.sha }}", $ContentRoot, $BuildOutput, "${{ env.STEAM_DEPOT_ID }}", $SetLiveLine
           
           Set-Content -Path $VdfPath -Value $VdfContent
           Write-Host "Generated VDF file at: $VdfPath"

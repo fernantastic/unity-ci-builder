@@ -1,5 +1,7 @@
 using UnityEditor;
 using UnityEngine;
+using System;
+using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -23,11 +25,16 @@ namespace UnityCloudBuild.Editor
         private bool itchEnabled = true;
         private string itchUsername = "user";
         private string itchGameName = "game";
+        private string itchTag = "daily";
         
         private bool steamEnabled = false;
         private string steamAppId = "";
         private string steamDepotId = "";
         private string steamUsername = "";
+        private bool steamSetLive = false;
+        private string steamSetLiveBranch = "";
+
+        private bool showMore = false;
 
         private Vector2 scrollPos;
 
@@ -120,7 +127,10 @@ namespace UnityCloudBuild.Editor
                 EditorGUI.indentLevel++;
                 itchUsername = EditorGUILayout.TextField("Username", itchUsername);
                 itchGameName = EditorGUILayout.TextField("Game Name", itchGameName);
-                EditorGUILayout.HelpBox($"Target: {itchUsername}/{itchGameName}:[platform]", MessageType.None);
+                itchTag = EditorGUILayout.TextField("Channel Tag", itchTag);
+                
+                string exampleChannel = string.IsNullOrEmpty(itchTag) ? "windows" : $"windows-{itchTag}";
+                EditorGUILayout.HelpBox($"Target: {itchUsername}/{itchGameName}:{exampleChannel}", MessageType.None);
                 EditorGUI.indentLevel--;
             }
 
@@ -133,6 +143,16 @@ namespace UnityCloudBuild.Editor
                 steamUsername = EditorGUILayout.TextField("Username", steamUsername);
                 steamAppId = EditorGUILayout.TextField("App ID", steamAppId);
                 steamDepotId = EditorGUILayout.TextField("Depot ID", steamDepotId);
+                
+                steamSetLive = EditorGUILayout.Toggle("Set Live", steamSetLive);
+                if (steamSetLive)
+                {
+                    EditorGUI.indentLevel++;
+                    steamSetLiveBranch = EditorGUILayout.TextField("Branch Name", steamSetLiveBranch);
+                    EditorGUILayout.HelpBox("This branch will be set live immediately after upload.", MessageType.Info);
+                    EditorGUI.indentLevel--;
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -149,7 +169,47 @@ namespace UnityCloudBuild.Editor
                 LoadConfig();
             }
 
+            EditorGUILayout.Space(20);
+            showMore = EditorGUILayout.Foldout(showMore, "More", true);
+            if (showMore)
+            {
+                GUILayout.Label("Test Builds (Local)", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox("Triggers the same build script used by CI/CD. Output: Build/Automated Builds/Latest/", MessageType.Info);
+                
+                if (GUILayout.Button("Build Windows 64-bit")) RunBuild("StandaloneWindows64");
+                if (GUILayout.Button("Build macOS")) RunBuild("StandaloneOSX");
+                if (GUILayout.Button("Build Linux 64-bit")) RunBuild("StandaloneLinux64");
+                if (GUILayout.Button("Build Android")) RunBuild("Android");
+                if (GUILayout.Button("Build iOS")) RunBuild("iOS");
+            }
+
             EditorGUILayout.EndScrollView();
+        }
+
+        private void RunBuild(string target)
+        {
+            Debug.Log($"Running test build for {target}...");
+            Environment.SetEnvironmentVariable("BUILD_TARGET", target);
+            
+            // Use reflection to find the CloudBuild class and BuildAll method
+            var cloudBuildType = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .FirstOrDefault(t => t.FullName == "UnityCloudBuild.CloudBuild");
+
+            if (cloudBuildType == null)
+            {
+                EditorUtility.DisplayDialog("Error", "CloudBuild script not found. Please click '1. Generate Build Files' first to install the build scripts.", "OK");
+                return;
+            }
+
+            var buildMethod = cloudBuildType.GetMethod("BuildAll", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (buildMethod == null)
+            {
+                Debug.LogError("CloudBuild.BuildAll method not found.");
+                return;
+            }
+
+            buildMethod.Invoke(null, null);
         }
 
         private void LoadConfig()
@@ -191,11 +251,15 @@ namespace UnityCloudBuild.Editor
             itchEnabled = ParseBool(content, "ITCH_ENABLED");
             itchUsername = ParseString(content, "ITCH_USERNAME");
             itchGameName = ParseString(content, "ITCH_GAME_NAME");
+            itchTag = ParseString(content, "ITCH_TAG");
+            if (string.IsNullOrEmpty(itchTag)) itchTag = "daily";
             
             steamEnabled = ParseBool(content, "STEAM_ENABLED");
             steamUsername = ParseString(content, "STEAM_USERNAME");
             steamAppId = ParseString(content, "STEAM_APP_ID");
             steamDepotId = ParseString(content, "STEAM_DEPOT_ID");
+            steamSetLive = ParseBool(content, "STEAM_SET_LIVE");
+            steamSetLiveBranch = ParseString(content, "STEAM_SET_LIVE_BRANCH");
         }
 
         private void SaveConfig()
@@ -238,6 +302,7 @@ BUILD_IOS: ""{buildiOS.ToString().ToLower()}""
 ITCH_ENABLED: ""{itchEnabled.ToString().ToLower()}""
 ITCH_USERNAME: ""{itchUsername}""
 ITCH_GAME_NAME: ""{itchGameName}""
+ITCH_TAG: ""{itchTag}""
 BUTLER_PATH_WIN: ""%APPDATA%\itch\apps\butler\butler.exe""
 BUTLER_PATH_OSX: ""~/.config/itch/apps/butler/butler""
 
@@ -246,6 +311,8 @@ STEAM_ENABLED: ""{steamEnabled.ToString().ToLower()}""
 STEAM_USERNAME: ""{steamUsername}""
 STEAM_APP_ID: ""{steamAppId}""
 STEAM_DEPOT_ID: ""{steamDepotId}""
+STEAM_SET_LIVE: ""{steamSetLive.ToString().ToLower()}""
+STEAM_SET_LIVE_BRANCH: ""{steamSetLiveBranch}""
 ";
             File.WriteAllText(fullPath, content);
             Debug.Log($"Configuration saved to: {fullPath}");
