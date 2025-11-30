@@ -91,13 +91,14 @@ Once installed, manage your workflow, via the url `https://github.com/youruserna
 
 ## Where to find your builds
 
-After a successful run, your build files will be located on your **Build Machine (Runner)** in the project folder:
+After a successful run, your build files will be located on your **Build Machine (Runner)**.
 
-`Build/Automated Builds/Latest/[Platform]/`
+Inside the folder where your Runner is installed, navigate to:
+`_work/[YourProjectName]/[YourProjectName]/Build/Automated Builds/Latest/[Platform]/`
 
 Examples:
-- `Build/Automated Builds/Latest/StandaloneWindows64/`
-- `Build/Automated Builds/Latest/StandaloneOSX/`
+- `.../_work/MyGame/MyGame/Build/Automated Builds/Latest/StandaloneWindows64/`
+- `.../_work/MyGame/MyGame/Build/Automated Builds/Latest/StandaloneOSX/`
 
 ## Defaults
 - **Build Method**: `UnityCloudBuild.CloudBuild.BuildAll` (handles all platforms based on env var)
