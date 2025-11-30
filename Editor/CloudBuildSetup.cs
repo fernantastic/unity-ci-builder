@@ -9,7 +9,7 @@ namespace UnityCloudBuild.Editor
     {
         private const string PackageName = "com.fernantastic.unity-ci-builder";
 
-        [MenuItem("Tools/Unity CI Builder/Generate Build Files", false, 0)]
+        [MenuItem("Tools/Unity CI Builder/Scripts/Generate Build Files", false, 1)]
         public static void InstallConfigFiles()
         {
             if (!EditorUtility.DisplayDialog("Generate Build Files", 
@@ -103,7 +103,7 @@ namespace UnityCloudBuild.Editor
             Debug.Log("Unity CI/CD Builder setup complete.");
         }
 
-        [MenuItem("Tools/Unity CI Builder/Other/Update Unity Version in Workflow", false, 50)]
+        [MenuItem("Tools/Unity CI Builder/Scripts/Update Unity Version in Workflow", false, 50)]
         public static void UpdateUnityVersion()
         {
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
@@ -135,7 +135,7 @@ namespace UnityCloudBuild.Editor
             }
         }
 
-        [MenuItem("Tools/Unity CI Builder/Other/Create Steam VDF Template", false, 51)]
+        [MenuItem("Tools/Unity CI Builder/Scripts/Create Steam VDF Template", false, 51)]
         public static void CreateSteamVDFTemplate()
         {
             string projectRoot = Path.GetDirectoryName(Application.dataPath);

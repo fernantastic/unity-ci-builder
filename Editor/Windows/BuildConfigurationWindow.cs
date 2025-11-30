@@ -28,7 +28,7 @@ namespace UnityCloudBuild.Editor
 
         private Vector2 scrollPos;
 
-        [MenuItem("Tools/Unity CI Builder/Configuration Settings")]
+        [MenuItem("Tools/Unity CI Builder/Open Configuration Window", false, 0)]
         public static void ShowWindow()
         {
             GetWindow<BuildConfigurationWindow>("CI/CD Config");
