@@ -36,8 +36,8 @@ namespace UnityCloudBuild.Editor
                 scriptsDestDir
             );
 
-            // 2. Copy Workflow Template
-            string workflowSrc = Path.Combine(packageRoot, ".github/workflows/main_build.yml.template");
+            // 2. Copy Workflow
+            string workflowSrc = Path.Combine(packageRoot, ".github/workflows/main_build.yml");
             string workflowDestDir = Path.Combine(projectRoot, ".github/workflows");
             string workflowDest = Path.Combine(workflowDestDir, "main_build.yml");
 

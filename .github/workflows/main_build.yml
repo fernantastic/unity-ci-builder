@@ -31,6 +31,15 @@ jobs:
       steam_depot_id: ${{ steps.read-config.outputs.STEAM_DEPOT_ID }}
       build_branches: ${{ steps.read-config.outputs.BUILD_BRANCHES }}
     steps:
+      - name: Debug - Check Git/Bash availability
+        shell: powershell
+        run: |
+            Write-Host "PATH contents:"
+            $env:PATH -split ';' | ForEach-Object { Write-Host "  $_" }
+            Write-Host "`nChecking for bash:"
+            Get-Command bash -ErrorAction SilentlyContinue | Format-List
+            Write-Host "`nChecking for git:"
+            Get-Command git -ErrorAction SilentlyContinue | Format-List
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -287,3 +296,4 @@ jobs:
           STEAM_USER: ${{ secrets.STEAM_USER }}
           STEAM_PASS: ${{ secrets.STEAM_PASS }}
           VDF_PATH: "${{ github.workspace }}/Unity-CI-Builder/steam_app_build.vdf"
+
