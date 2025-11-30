@@ -51,9 +51,11 @@ jobs:
           
           $outputs = @{}
           foreach ($line in $lines) {
-              if ($line -match '^\s*([A-Z_]+):\s*"?(.+?)"?\s*(#.*)?$') {
+              if ($line -match '^\s*([A-Z_]+):\s*(?:"([^"]*)"|([^#\s]+))') {
                   $key = $matches[1]
-                  $value = $matches[2].Trim('"')
+                  $value = $matches[2]
+                  if (-not $value) { $value = $matches[3] }
+                  
                   $outputs[$key] = $value
                   "$key=$value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
               }
