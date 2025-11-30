@@ -174,13 +174,35 @@ jobs:
                  return 
              }
           }
+
+          $CurrentDir = Get-Location
+          Write-Host "Current working directory: $CurrentDir"
           
           $UnityExe = "C:\Program Files\Unity\Hub\Editor\${{ env.UNITY_VERSION }}\Editor\Unity.exe"
           $BuildPath = "${{ env.BUILD_ROOT }}\$Target"
+          $LogFile = Join-Path $CurrentDir "build_$Target.log"
+          
+          Write-Host "Log file will be written to: $LogFile"
           
           & $UnityExe -quit -batchmode -nographics -projectPath "." `
             -executeMethod UnityCloudBuild.CloudBuild.BuildAll `
-            -logFile "build_$Target.log"
+            -logFile $LogFile
+          
+          $ExitCode = $LASTEXITCODE
+          Write-Host "Unity process exited with code: $ExitCode"
+          
+          if (Test-Path $LogFile) {
+              Write-Host "`n=== Unity Build Log ==="
+              Get-Content $LogFile
+              Write-Host "=== End of Unity Build Log ===`n"
+          } else {
+              Write-Host "Warning: Log file not found at $LogFile"
+          }
+          
+          if ($ExitCode -ne 0) {
+              Write-Error "Unity build failed with exit code $ExitCode"
+              exit $ExitCode
+          }
         env:
           BUILD_TARGET: ${{ matrix.targetPlatform }}
           BUILD_OUTPUT_PATH: ${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}
