@@ -85,6 +85,10 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
    3. Edit this file as needed.
    4. The workflow will detect this file exists and use it *instead* of auto-generating one.
 
+## Managing your runner
+
+Once installed, manage your workflow, via the url `https://github.com/yourusername/yourproject/actions`
+
 ## Defaults
 - **Build Output**: `ProjectRoot/Build/Automated Builds/Latest/[Platform]/`
 - **Build Method**: `UnityCloudBuild.CloudBuild.BuildAll` (handles all platforms based on env var)
