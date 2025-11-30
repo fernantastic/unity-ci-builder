@@ -1,6 +1,12 @@
 # 🚀 Unity CI/CD Builder
 
-Simple, automated headless Unity builds and deployment. Supports Windows, Mac, Linux, iOS, Android.
+Simple, automated headless Unity builds and deployment using **GitHub Actions** and **Self-Hosted Runners**.
+
+This tool automatically sets up all the necessary scripts and workflows to:
+- Trigger builds on your own build machine whenever you push code.
+- Support multi-platform builds: Windows, Mac, Linux, iOS, Android.
+- Automatically upload builds to **Itch.io** and **Steam**.
+- Configure everything directly inside Unity via a **Configuration Window** (or by editing simple config files).
 
 ## Quick Start (Project Setup)
 
@@ -20,8 +26,6 @@ https://github.com/fernantastic/unity-ci-builder.git
    - **Steam Deployment**: Enable and enter your App ID and Depot ID.
 4. Click **"Save Configuration File"**.
    - This saves your settings to `.github/workflows/build-config.yml`.
-
-### 3. Configure GitHub Secrets
 
 ## Build Machine Setup (Runner)
 
