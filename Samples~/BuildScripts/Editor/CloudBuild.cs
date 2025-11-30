@@ -11,7 +11,9 @@ namespace UnityCloudBuild
     {
         public static void BuildAll()
         {
-            string buildTarget = Environment.GetEnvironmentVariable("BUILD_TARGET"); // e.g., "StandaloneWindows64", "StandaloneOSX", "Android"
+            try
+            {
+                string buildTarget = Environment.GetEnvironmentVariable("BUILD_TARGET"); // e.g., "StandaloneWindows64", "StandaloneOSX", "Android"
             string buildPath = Environment.GetEnvironmentVariable("BUILD_OUTPUT_PATH");
 
             // Fallback for command line arguments if env vars are missing
@@ -73,6 +75,13 @@ namespace UnityCloudBuild
             string executableName = Application.productName + extension;
             string locationPathName = Path.Combine(buildPath, executableName);
 
+            // Clean build directory
+            if (Directory.Exists(buildPath))
+            {
+                Debug.Log($"Cleaning build directory: {buildPath}");
+                Directory.Delete(buildPath, true);
+            }
+
             // Ensure directory exists
             Directory.CreateDirectory(Path.GetDirectoryName(locationPathName));
 
@@ -89,14 +98,20 @@ namespace UnityCloudBuild
 
             Debug.Log($"Build result: {summary.result}");
 
-            if (summary.result == BuildResult.Succeeded)
-            {
-                Debug.Log($"Build SUCCEEDED! {summary.totalSize / 1024 / 1024} MB");
-                if (Application.isBatchMode) EditorApplication.Exit(0);
+                if (summary.result == BuildResult.Succeeded)
+                {
+                    Debug.Log($"Build SUCCEEDED! {summary.totalSize / 1024 / 1024} MB");
+                    if (Application.isBatchMode) EditorApplication.Exit(0);
+                }
+                else
+                {
+                    Debug.LogError($"Build FAILED! Errors: {summary.totalErrors}");
+                    if (Application.isBatchMode) EditorApplication.Exit(1);
+                }
             }
-            else
+            catch (Exception e)
             {
-                Debug.LogError($"Build FAILED! Errors: {summary.totalErrors}");
+                Debug.LogError($"CloudBuild.BuildAll failed with exception: {e}");
                 if (Application.isBatchMode) EditorApplication.Exit(1);
             }
         }

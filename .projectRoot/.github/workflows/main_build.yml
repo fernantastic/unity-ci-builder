@@ -160,28 +160,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure Build Script Exists
-        shell: powershell
-        run: |
-          # Check if the build script exists in the expected location
-          $ScriptPath = "Assets/Unity-CI-Builder/Editor/CloudBuild.cs"
-          $AltScriptPath = "Editor/CloudBuild.cs"
-          
-          if (-not (Test-Path $ScriptPath) -and -not (Test-Path $AltScriptPath)) {
-              Write-Error "Build script not found in 'Assets/Unity-CI-Builder/Editor/CloudBuild.cs'. Please open the 'CI/CD Config' window in Unity and click 'Generate All Build Files'."
-              exit 1
-          } else {
-              Write-Host "Build script found."
-          }
-
       - name: Unity Build
         shell: powershell
         run: |
           $Target = "${{ matrix.targetPlatform }}"
           
           # Override if manually triggered with input
-          if ("${{ github.event.inputs.platforms }}") {
-             $inputPlatforms = "${{ github.event.inputs.platforms }}" -split ","
+          $inputPlatformsString = "${{ github.event.inputs.platforms }}"
+          if ($inputPlatformsString -ne "") {
+             $inputPlatforms = $inputPlatformsString -split ","
              if ($Target -notin $inputPlatforms) { 
                  Write-Host "Skipping $Target (not in manual input)"
                  return 
@@ -198,6 +185,38 @@ jobs:
           BUILD_TARGET: ${{ matrix.targetPlatform }}
           BUILD_OUTPUT_PATH: ${{ env.BUILD_ROOT }}\${{ matrix.targetPlatform }}
 
+      - name: Verify Build Artifacts
+        shell: powershell
+        run: |
+          $Target = "${{ matrix.targetPlatform }}"
+          $BuildPath = "${{ env.BUILD_ROOT }}\$Target"
+          
+          Write-Host "Verifying build output in: $BuildPath"
+          
+          if (-not (Test-Path $BuildPath)) {
+              Write-Error "Build directory does not exist: $BuildPath"
+              exit 1
+          }
+          
+          $Files = Get-ChildItem -Path $BuildPath -Recurse
+          if ($Files.Count -eq 0) {
+              Write-Error "Build directory is empty: $BuildPath"
+              exit 1
+          }
+          
+          # Check for log file indicating failure (if Unity crashed but didn't return non-zero exit code)
+          $LogFile = "build_$Target.log"
+          if (Test-Path $LogFile) {
+              $LogContent = Get-Content $LogFile
+              if ($LogContent -match "Build FAILED!") {
+                  Write-Error "Unity build log indicates failure!"
+                  exit 1
+              }
+          }
+          
+          Write-Host "Found $($Files.Count) files in build directory."
+          $Files | Select-Object Name, Length | Format-Table -AutoSize
+
       - name: Upload Unity Build Logs
         uses: actions/upload-artifact@v4
         if: always()
@@ -206,7 +225,7 @@ jobs:
           path: build_${{ matrix.targetPlatform }}.log
 
       - name: Deploy to Itch.io
-        if: env.ITCH_ENABLED == 'true'
+        if: success() && env.ITCH_ENABLED == 'true'
         shell: powershell
         run: |
           $Target="${{ matrix.targetPlatform }}"
@@ -248,7 +267,7 @@ jobs:
           BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
       - name: Generate Steam VDF
-        if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
+        if: success() && env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
         shell: powershell
         run: |
           if ("${{ env.STEAM_APP_ID }}" -eq "") {
@@ -312,7 +331,7 @@ jobs:
           Write-Host "Build Output: $BuildOutput"
 
       - name: Deploy to Steam
-        if: env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
+        if: success() && env.STEAM_ENABLED == 'true' && matrix.targetPlatform == 'StandaloneWindows64'
         shell: powershell
         run: |
           $VdfPath="${{ github.workspace }}\.projectRoot\.github\scripts\steam_app_build.vdf"
