@@ -26,18 +26,17 @@ namespace UnityCloudBuild.Editor
                 return;
             }
 
-            // 1. Copy Bash Scripts to Unity-CI-Builder/Scripts
+            // 1. Copy Bash Scripts to .github/scripts
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
-            string builderRoot = Path.Combine(projectRoot, "Unity-CI-Builder");
-            string scriptsDestDir = Path.Combine(builderRoot, "Scripts");
+            string githubScriptsDir = Path.Combine(projectRoot, ".github/scripts");
             
             CopyDirectory(
-                Path.Combine(packageRoot, ".github/scripts"), 
-                scriptsDestDir
+                Path.Combine(packageRoot, ".projectRoot/.github/scripts"), 
+                githubScriptsDir
             );
 
             // 2. Copy Workflow
-            string workflowSrc = Path.Combine(packageRoot, ".github/workflows/main_build.yml");
+            string workflowSrc = Path.Combine(packageRoot, ".projectRoot/.github/workflows/main_build.yml");
             string workflowDestDir = Path.Combine(projectRoot, ".github/workflows");
             string workflowDest = Path.Combine(workflowDestDir, "main_build.yml");
 
@@ -60,7 +59,7 @@ namespace UnityCloudBuild.Editor
             }
 
             // 2b. Copy Config File
-            string configSrc = Path.Combine(packageRoot, ".github/build-config.yml");
+            string configSrc = Path.Combine(packageRoot, ".projectRoot/.github/build-config.yml");
             string configDest = Path.Combine(projectRoot, ".github/build-config.yml");
 
             if (File.Exists(configSrc))
