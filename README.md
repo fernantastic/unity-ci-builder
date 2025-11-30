@@ -11,35 +11,17 @@ https://github.com/fernantastic/unity-ci-builder.git
 ```
 
 ### 2. Setup Config
-In Unity, click **Tools > Unity CI Builder > Install Config Files**.
-This sets up:
-- `.github/workflows/main_build.yml` (GitHub Actions workflow)
-- `Assets/Unity-CI-Builder/Editor/CloudBuild.cs` (Build script)
-- `Unity-CI-Builder/Scripts/` (Deployment helper scripts in project root)
+1. In Unity, go to **Tools > Unity CI Builder > Open Configuration Window**.
+2. Click the big button **"1. Generate Build Files"**.
+   - This installs the necessary files (workflow, scripts, config) into your project.
+3. Configure your build settings in the window:
+   - **Build Platforms**: Toggle the platforms you want to build.
+   - **Itch.io Deployment**: Enable and enter your itch.io username and game name.
+   - **Steam Deployment**: Enable and enter your App ID and Depot ID.
+4. Click **"Save Configuration File"**.
+   - This saves your settings to `.github/workflows/build-config.yml`.
 
-### 3. Configure
-1. **GitHub Secrets**: Go to your repository's **Settings > Security > Secrets and variables > Actions** and add:
-   - `ITCHIO_API_KEY` (if deploying to Itch)
-   - `STEAM_USER`, `STEAM_PASS` (if deploying to Steam)
-2. **Configuration Settings**: Edit `.github/workflows/build-config.yml` to configure your builds:
-   ```yaml
-   BUILD_WINDOWS_64: "true"
-   BUILD_MAC: "true"
-   BUILD_LINUX: "false"
-   BUILD_ANDROID: "false"
-   BUILD_IOS: "false"
-   
-   ITCH_USERNAME: "your-username"
-   ITCH_GAME_NAME: "your-game-name"
-   ITCH_ENABLED: "true"
-   
-   STEAM_APP_ID: ""
-   STEAM_DEPOT_ID: ""
-   STEAM_ENABLED: "false"
-   ```
-   - Use `"true"` or `"false"` as strings
-   - `BUILD_MAC` builds for StandaloneOSX (universal Mac builds - works for both Intel and Apple Silicon)
-   - `UNITY_VERSION` is auto-detected. If you upgrade Unity, use **Tools > Unity CI Builder > Update Unity Version in Workflow**.
+### 3. Configure GitHub Secrets
 
 ## Build Machine Setup (Runner)
 
@@ -76,21 +58,28 @@ To use your own computer as the build server (Self-Hosted Runner), follow these 
 
 1. **Get API Key**: Go to [itch.io Settings → API keys](https://itch.io/user/settings/api-keys) and generate a new key.
 2. **Add Secret**: Add `ITCHIO_API_KEY` to your repository secrets.
-3. **Configure Settings**: In `.github/workflows/main_build.yml`, set:
-   - `ITCH_USERNAME`: Your itch.io username
-   - `ITCH_GAME_NAME`: Your game name
-   - `ITCH_ENABLED: true`
+3. **Configure Settings**: Open **Tools > Unity CI Builder > Open Configuration Window**:
+   - Enable Itch.io.
+   - Enter your **Username** and **Game Name**.
+   - Click **Save Configuration File**.
 
 ### Steam Deployment
 
 1. **Get Credentials**: Use your Steamworks build account (not personal account).
 2. **Add Secrets**: Add `STEAM_USER` and `STEAM_PASS` to your repository secrets.
-3. **Configure Settings**: Edit `.github/workflows/build-config.yml`:
-   - `STEAM_APP_ID`: Your Steam App ID (as string, e.g., `"123456"`)
-   - `STEAM_DEPOT_ID`: Your Steam Depot ID (as string, e.g., `"123457"`)
-   - `STEAM_ENABLED: "true"`
+3. **Configure Settings**: Open **Tools > Unity CI Builder > Open Configuration Window**:
+   - Enable Steam.
+   - Enter your **App ID** and **Depot ID**.
+   - Click **Save Configuration File**.
    
-   The VDF file is automatically generated during the workflow - no manual file editing needed!
+   The VDF file is automatically generated during the workflow using these ID's.
+
+   **Optional: Custom VDF File**
+   If you need a complex Steam setup (multiple depots, custom install scripts), you can create a custom VDF file:
+   1. Go to **Tools > Unity CI Builder > Scripts > Create Steam VDF Template**.
+   2. This creates `Unity-CI-Builder/steam_app_build.vdf`.
+   3. Edit this file as needed.
+   4. The workflow will detect this file exists and use it *instead* of auto-generating one.
 
 ## Defaults
 - **Build Output**: `ProjectRoot/Build/Automated Builds/Latest/[Platform]/`
