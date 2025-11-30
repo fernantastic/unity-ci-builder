@@ -49,7 +49,7 @@ jobs:
           
           $outputs = @{}
           foreach ($line in $lines) {
-              if ($line -match '^\s*([A-Z_]+):\s*"?(.+?)"?\s*$') {
+              if ($line -match '^\s*([A-Z_]+):\s*"?(.+?)"?\s*(#.*)?$') {
                   $key = $matches[1]
                   $value = $matches[2].Trim('"')
                   $outputs[$key] = $value
