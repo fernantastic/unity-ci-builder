@@ -12,6 +12,8 @@ namespace UnityCloudBuild.Editor
         
         // Settings
         private string buildBranches = "main";
+        private string unityVersion = "2022.3.20f1";
+        private bool autoDetectUnityVersion = true;
         private bool buildWindows64 = true;
         private bool buildMac = true;
         private bool buildLinux = false;
@@ -78,6 +80,21 @@ namespace UnityCloudBuild.Editor
             GUILayout.Label("CI Settings", EditorStyles.boldLabel);
             buildBranches = EditorGUILayout.TextField("Build Branches", buildBranches);
             EditorGUILayout.HelpBox("Comma-separated list of branches to build (e.g., 'main, develop').", MessageType.None);
+            
+            EditorGUILayout.Space();
+            autoDetectUnityVersion = EditorGUILayout.Toggle("Automatically include Unity version", autoDetectUnityVersion);
+            if (autoDetectUnityVersion)
+            {
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUILayout.TextField("Unity Version", Application.unityVersion);
+                EditorGUI.EndDisabledGroup();
+                EditorGUILayout.HelpBox($"Auto-detected Unity version: {Application.unityVersion}", MessageType.None);
+            }
+            else
+            {
+                unityVersion = EditorGUILayout.TextField("Unity Version", unityVersion);
+                EditorGUILayout.HelpBox("Unity version to use for builds (e.g., '2022.3.20f1').", MessageType.None);
+            }
 
             EditorGUILayout.Space();
             GUILayout.Label("Build Platforms", EditorStyles.boldLabel);
@@ -141,6 +158,25 @@ namespace UnityCloudBuild.Editor
             // Simple regex parsing
             buildBranches = ParseString(content, "BUILD_BRANCHES");
             if (string.IsNullOrEmpty(buildBranches)) buildBranches = "main";
+            
+            string savedUnityVersion = ParseString(content, "UNITY_VERSION");
+            if (string.IsNullOrEmpty(savedUnityVersion))
+            {
+                autoDetectUnityVersion = true;
+                unityVersion = Application.unityVersion;
+            }
+            else
+            {
+                if (savedUnityVersion == Application.unityVersion)
+                {
+                    autoDetectUnityVersion = true;
+                }
+                else
+                {
+                    autoDetectUnityVersion = false;
+                    unityVersion = savedUnityVersion;
+                }
+            }
 
             buildWindows64 = ParseBool(content, "BUILD_WINDOWS_64");
             buildMac = ParseBool(content, "BUILD_MAC");
@@ -175,11 +211,16 @@ namespace UnityCloudBuild.Editor
                 Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
             }
 
+            string versionToSave = autoDetectUnityVersion ? Application.unityVersion : unityVersion;
+            
             string content = $@"# Unity CI/CD Builder Configuration
 # Edit these settings to configure your builds and deployments
 
 # CI Settings
 BUILD_BRANCHES: ""{buildBranches}""
+
+# Unity Version
+UNITY_VERSION: ""{versionToSave}""
 
 # Platform Build Settings (use ""true"" or ""false"")
 BUILD_WINDOWS_64: ""{buildWindows64.ToString().ToLower()}""

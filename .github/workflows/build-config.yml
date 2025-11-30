@@ -4,6 +4,9 @@
 # CI Settings
 BUILD_BRANCHES: "main"
 
+# Unity Version
+UNITY_VERSION: "2022.3.20f1"
+
 # Platform Build Settings (use "true" or "false")
 BUILD_WINDOWS_64: "true"
 BUILD_MAC: "true"

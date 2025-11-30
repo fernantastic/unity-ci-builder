@@ -50,13 +50,8 @@ namespace UnityCloudBuild.Editor
                     // Use forward slashes for cross-platform compatibility
                     content = content.Replace(@"./Scripts/", @"./Unity-CI-Builder/Scripts/");
                     
-                    // Auto-detect and set Unity version
-                    string currentUnityVersion = Application.unityVersion;
-                    // Regex to find "UNITY_VERSION: <something>" (simpler regex)
-                    content = Regex.Replace(content, @"UNITY_VERSION:.*", $"UNITY_VERSION: {currentUnityVersion}");
-                    
                     File.WriteAllText(workflowDest, content);
-                    Debug.Log($"Installed workflow to: {workflowDest} with Unity version {currentUnityVersion}");
+                    Debug.Log($"Installed workflow to: {workflowDest}");
                 }
             }
             else
@@ -104,34 +99,35 @@ namespace UnityCloudBuild.Editor
             Debug.Log("Unity CI/CD Builder setup complete.");
         }
 
-        [MenuItem("Tools/Unity CI Builder/Scripts/Update Unity Version in Workflow", false, 50)]
+        [MenuItem("Tools/Unity CI Builder/Scripts/Update Unity Version in Config", false, 50)]
         public static void UpdateUnityVersion()
         {
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
-            string workflowPath = Path.Combine(projectRoot, ".github/workflows/main_build.yml");
+            string configPath = Path.Combine(projectRoot, ".github/workflows/build-config.yml");
 
-            if (!File.Exists(workflowPath))
+            if (!File.Exists(configPath))
             {
-                EditorUtility.DisplayDialog("Error", "Workflow file not found. Please install config files first.", "OK");
+                EditorUtility.DisplayDialog("Error", "Config file not found. Please install config files first.", "OK");
                 return;
             }
 
-            string content = File.ReadAllText(workflowPath);
+            string content = File.ReadAllText(configPath);
             string currentUnityVersion = Application.unityVersion;
             
             // Regex to find "UNITY_VERSION: <something>"
-            string pattern = @"(UNITY_VERSION:\s*)(.*)";
-            string newContent = Regex.Replace(content, pattern, $"$1{currentUnityVersion}");
+            string pattern = @"(UNITY_VERSION:\s*""?)(.*?)(""?\s*(#.*)?$)";
+            string newContent = Regex.Replace(content, pattern, $"$1{currentUnityVersion}$3", RegexOptions.Multiline);
 
             if (content != newContent)
             {
-                File.WriteAllText(workflowPath, newContent);
-                Debug.Log($"Updated Unity version in workflow to {currentUnityVersion}");
+                File.WriteAllText(configPath, newContent);
+                Debug.Log($"Updated Unity version in config to {currentUnityVersion}");
                 EditorUtility.DisplayDialog("Success", $"Updated Unity version to {currentUnityVersion}", "OK");
+                AssetDatabase.Refresh();
             }
             else
             {
-                Debug.Log("Unity version in workflow is already up to date.");
+                Debug.Log("Unity version in config is already up to date.");
                 EditorUtility.DisplayDialog("Info", "Unity version is already up to date.", "OK");
             }
         }

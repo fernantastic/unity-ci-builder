@@ -30,6 +30,7 @@ jobs:
       steam_app_id: ${{ steps.read-config.outputs.STEAM_APP_ID }}
       steam_depot_id: ${{ steps.read-config.outputs.STEAM_DEPOT_ID }}
       build_branches: ${{ steps.read-config.outputs.BUILD_BRANCHES }}
+      unity_version: ${{ steps.read-config.outputs.UNITY_VERSION }}
     steps:
       - name: Debug - Check Git/Bash availability
         shell: powershell
@@ -142,8 +143,8 @@ jobs:
       STEAM_APP_ID: ${{ needs.setup.outputs.steam_app_id }}
       STEAM_DEPOT_ID: ${{ needs.setup.outputs.steam_depot_id }}
       
-      # --- Technical Settings (Usually auto-detected) ---
-      UNITY_VERSION: 2022.3.20f1
+      # --- Technical Settings (Loaded from .github/workflows/build-config.yml) ---
+      UNITY_VERSION: ${{ needs.setup.outputs.unity_version }}
       PROJECT_NAME: ${{ github.event.repository.name }}
       BUILD_ROOT: ${{ github.workspace }}\Build\Automated Builds\Latest
 
