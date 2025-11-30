@@ -34,7 +34,8 @@ namespace UnityCloudBuild.Editor
         private bool steamSetLive = false;
         private string steamSetLiveBranch = "";
 
-        private bool showMore = false;
+        private int selectedTab = 0;
+        private readonly string[] tabs = { "Setup", "Config", "Test" };
 
         private Vector2 scrollPos;
 
@@ -52,39 +53,77 @@ namespace UnityCloudBuild.Editor
 
         private void OnGUI()
         {
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
             EditorGUILayout.Space();
             GUILayout.Label("Unity CI/CD Builder Configuration", EditorStyles.boldLabel);
-            
+            EditorGUILayout.Space();
+
+            selectedTab = GUILayout.Toolbar(selectedTab, tabs);
+            EditorGUILayout.Space();
+
+            // Disable horizontal scrolling
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUI.skin.scrollView);
+
+            switch (selectedTab)
+            {
+                case 0:
+                    DrawSetupTab();
+                    break;
+                case 1:
+                    DrawConfigTab();
+                    break;
+                case 2:
+                    DrawTestTab();
+                    break;
+            }
+
+            EditorGUILayout.EndScrollView();
+        }
+
+        private void DrawSetupTab()
+        {
+            EditorGUILayout.LabelField("1. Setup Build Files", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("These files are required for the CI/CD pipeline to work. Click 'Generate All Build Files' to install or update them.", MessageType.None);
+            EditorGUILayout.Space();
+
             // Check required files
+            bool allFilesExist = CheckAllFilesExist();
             DrawFileStatus();
 
-            // Check if config file exists
-            string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), ConfigPath);
-            bool configExists = File.Exists(fullPath);
+            EditorGUILayout.Space();
 
-            // 1. Generate Build Files Button
-            GUI.backgroundColor = configExists ? new Color(1f, 0.9f, 0.4f) : new Color(0.4f, 1f, 0.4f);
-            if (GUILayout.Button("1. Generate All Build Files", GUILayout.Height(40)))
+            // Generate Build Files Button
+            // Highlight if files are missing
+            GUI.backgroundColor = !allFilesExist ? new Color(0.4f, 1f, 0.4f) : Color.white;
+            if (GUILayout.Button("Generate All Build Files", GUILayout.Height(40)))
             {
                 CloudBuildSetup.InstallConfigFiles();
                 LoadConfig(); // Reload in case it was created/overwritten
             }
             GUI.backgroundColor = Color.white;
+            
             EditorGUILayout.Space();
 
-            if (configExists)
+            if (allFilesExist)
             {
-                EditorGUILayout.HelpBox("Build files found. You can update them by clicking above.", MessageType.Info);
+                EditorGUILayout.HelpBox("All required files are present! You are ready to configure your build.", MessageType.Info);
             }
             else
             {
-                EditorGUILayout.HelpBox("Build files not found. Click above to generate them.", MessageType.Warning);
+                EditorGUILayout.HelpBox("Some files are missing. Please click 'Generate All Build Files' above.", MessageType.Warning);
             }
+        }
 
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-            EditorGUILayout.Space();
+        private void DrawConfigTab()
+        {
+            // Check if config file exists
+            string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), ConfigPath);
+            bool configExists = File.Exists(fullPath);
+
+            if (!configExists)
+            {
+                EditorGUILayout.HelpBox($"Config file not found at {ConfigPath}. Please go to the Setup tab and generate build files.", MessageType.Error);
+                return;
+            }
 
             EditorGUILayout.HelpBox($"Editing: {ConfigPath}", MessageType.None);
             
@@ -171,22 +210,33 @@ namespace UnityCloudBuild.Editor
             {
                 LoadConfig();
             }
+        }
 
-            EditorGUILayout.Space(20);
-            showMore = EditorGUILayout.Foldout(showMore, "More", true);
-            if (showMore)
-            {
-                GUILayout.Label("Test Builds (Local)", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox("Triggers the same build script used by CI/CD. Output: Build/Automated Builds/Latest/", MessageType.Info);
-                
-                if (GUILayout.Button("Build Windows 64-bit")) RunBuild("StandaloneWindows64");
-                if (GUILayout.Button("Build macOS")) RunBuild("StandaloneOSX");
-                if (GUILayout.Button("Build Linux 64-bit")) RunBuild("StandaloneLinux64");
-                if (GUILayout.Button("Build Android")) RunBuild("Android");
-                if (GUILayout.Button("Build iOS")) RunBuild("iOS");
-            }
-
-            EditorGUILayout.EndScrollView();
+        private void DrawTestTab()
+        {
+            GUILayout.Label("Test Builds (Local)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Triggers the same build script used by CI/CD.\nOutput will be in: Build/Automated Builds/Latest/", MessageType.Info);
+            EditorGUILayout.Space();
+            
+            if (GUILayout.Button("Build Windows 64-bit", GUILayout.Height(30))) RunBuild("StandaloneWindows64");
+            if (GUILayout.Button("Build macOS", GUILayout.Height(30))) RunBuild("StandaloneOSX");
+            if (GUILayout.Button("Build Linux 64-bit", GUILayout.Height(30))) RunBuild("StandaloneLinux64");
+            if (GUILayout.Button("Build Android", GUILayout.Height(30))) RunBuild("Android");
+            if (GUILayout.Button("Build iOS", GUILayout.Height(30))) RunBuild("iOS");
+        }
+        
+        private bool CheckAllFilesExist()
+        {
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string[] paths = {
+                Path.Combine(projectRoot, ".github/workflows/main_build.yml"),
+                Path.Combine(projectRoot, ".github/build-config.yml"),
+                Path.Combine(projectRoot, ".github/scripts/deploy_itch.sh"),
+                Path.Combine(projectRoot, ".github/scripts/deploy_steam.sh"),
+                Path.Combine(Application.dataPath, "Unity-CI-Builder/Editor/CloudBuild.cs")
+            };
+            
+            return paths.All(File.Exists);
         }
 
         private void DrawFileStatus()
@@ -226,7 +276,7 @@ namespace UnityCloudBuild.Editor
             GUILayout.Label(icon, GUILayout.Width(20));
             
             // Label
-            GUILayout.Label(label, exists ? EditorStyles.label : EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(label, exists ? EditorStyles.label : EditorStyles.boldLabel);
             
             // Create Button if missing
             if (!exists)
